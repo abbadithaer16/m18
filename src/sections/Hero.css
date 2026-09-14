@@ -1,0 +1,118 @@
+.hero {
+  position: relative;
+  justify-content: space-between;
+  min-height: 100svh;
+}
+
+.hero-drag-zone {
+  position: absolute;
+  inset: 0;
+  touch-action: pan-y;
+  cursor: grab;
+  z-index: 0;
+}
+
+.hero-drag-zone:active {
+  cursor: grabbing;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  gap: 32px;
+}
+
+.hero-top {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vw, 16px);
+  max-width: 62%;
+}
+
+.hero-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(18px, 3vw, 32px);
+}
+
+.drag-hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(20px, 4vh, 40px);
+  transform: translateX(-50%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 1;
+  transition: opacity 0.6s var(--ease-out);
+  animation: drag-hint-float 2.6s ease-in-out infinite;
+}
+
+.drag-hint.is-hidden {
+  opacity: 0;
+}
+
+.drag-hint-deg {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--c-text-dim);
+}
+
+.drag-hint-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+}
+
+@keyframes drag-hint-float {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-6px);
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-top {
+    max-width: 100%;
+  }
+
+  .hero-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* The CTA row stacks vertically and grows tall on narrow screens, so
+     anchoring the hint to the bottom (like on desktop) would collide with
+     it. Float it over the vehicle instead, clear of both text blocks. */
+  .drag-hint {
+    top: 52%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    animation-name: drag-hint-float-mobile;
+  }
+
+  @keyframes drag-hint-float-mobile {
+    0%,
+    100% {
+      transform: translate(-50%, -50%);
+    }
+    50% {
+      transform: translate(-50%, calc(-50% - 6px));
+    }
+  }
+}

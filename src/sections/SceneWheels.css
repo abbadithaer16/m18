@@ -1,0 +1,43 @@
+.scene-wheels {
+  min-height: 145svh;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.scene-wheels-text {
+  align-self: flex-start;
+  max-width: 42%;
+}
+
+.scene-wheels-callouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(24px, 5vw, 64px);
+  width: 100%;
+  padding-top: clamp(16px, 3vh, 28px);
+  border-top: 1px solid var(--c-line);
+}
+
+.callout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.callout-value {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  color: var(--c-warm-white);
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 760px) {
+  .scene-wheels-text {
+    max-width: 100%;
+  }
+
+  .scene-wheels-callouts {
+    gap: 22px;
+  }
+}

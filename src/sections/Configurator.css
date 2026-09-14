@@ -1,0 +1,93 @@
+.configurator {
+  position: relative;
+  min-height: 135svh;
+  justify-content: flex-start;
+}
+
+.configurator-heading {
+  max-width: 50%;
+}
+
+.configurator-panel {
+  position: absolute;
+  right: var(--gutter);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(320px, 32vw);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 2.6vh, 26px);
+}
+
+.config-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.config-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-summary-line {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--c-warm-white);
+}
+
+.config-price {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-price-value {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(1.5rem, 2.2vw, 1.9rem);
+  color: var(--c-warm-white);
+}
+
+.config-ctas {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.config-ctas .btn {
+  width: 100%;
+}
+
+@media (max-width: 1000px) {
+  .configurator-panel {
+    width: min(360px, 42vw);
+  }
+}
+
+@media (max-width: 760px) {
+  .configurator {
+    justify-content: flex-start;
+    gap: 32px;
+  }
+
+  .configurator-heading {
+    max-width: 100%;
+  }
+
+  .configurator-panel {
+    position: static;
+    transform: none;
+    width: 100%;
+    margin-top: 24px;
+  }
+}

@@ -1,0 +1,26 @@
+.scene-interior {
+  min-height: 120svh;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.scene-interior-text {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 40%;
+  text-align: right;
+  align-items: flex-end;
+}
+
+.scene-interior-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 760px) {
+  .scene-interior-text {
+    max-width: 100%;
+  }
+}

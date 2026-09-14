@@ -1,0 +1,29 @@
+.final {
+  min-height: 100svh;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.final-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(18px, 3vh, 28px);
+}
+
+.final-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.final-model {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-warm-white);
+}

@@ -1,0 +1,33 @@
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--c-line-strong);
+  box-shadow: inset 0 0 0 3px rgba(2, 2, 2, 0.55);
+  transition: box-shadow 0.3s var(--ease-out), transform 0.3s var(--ease-out);
+}
+
+.swatch.is-active .swatch-dot {
+  box-shadow: 0 0 0 2px var(--c-void), 0 0 0 3px var(--c-warm-white);
+  transform: scale(1.05);
+}
+
+.swatch-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-faint);
+  white-space: nowrap;
+}
+
+.swatch.is-active .swatch-label {
+  color: var(--c-warm-white);
+}

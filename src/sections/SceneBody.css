@@ -1,0 +1,17 @@
+.scene-body {
+  min-height: 145svh;
+  justify-content: flex-start;
+}
+
+.scene-body-text {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 1.6vw, 16px);
+  max-width: 46%;
+}
+
+@media (max-width: 760px) {
+  .scene-body-text {
+    max-width: 100%;
+  }
+}

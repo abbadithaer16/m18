@@ -1,0 +1,12 @@
+.scene-light {
+  min-height: 125svh;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.scene-light-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
