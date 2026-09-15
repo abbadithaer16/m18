@@ -6,6 +6,25 @@ import { sceneState, sweepState } from '../state/sceneState'
 gsap.registerPlugin(ScrollTrigger)
 
 /**
+ * Applies a tween (or `spec`) to `target` within a scrubbed timeline. `spec`
+ * is normally a plain vars object animated across the whole timeline (the
+ * original single-stage behavior). Passing an array of
+ * `{ at, duration, vars, ease }` stages instead lets a single scene stage a
+ * multi-beat move — e.g. "hold near-black, then ignite the headlights, then
+ * settle" — as sequential segments of the same scrubbed timeline rather
+ * than one linear blend, without needing a second ScrollTrigger.
+ */
+function applyStages(tl, target, spec) {
+  if (Array.isArray(spec)) {
+    spec.forEach(({ at = 0, duration = 1, vars, ease = 'none' }) => {
+      tl.to(target, { ...vars, duration: Math.max(duration, 0.001), ease }, at)
+    })
+  } else {
+    tl.to(target, { ...spec }, 0)
+  }
+}
+
+/**
  * Ties one DOM section's own scroll range to the shared `sceneState` object
  * (camera / vehicle / lighting) plus optional text reveals — all driven
  * continuously by scroll position via a single scrubbed GSAP timeline, so
@@ -35,6 +54,7 @@ export function useScrollScene({
   headlightWake,
   taillight,
   sweep,
+  wheelSpin,
   textRef,
   textFadeInEnd = 0.3,
   textFadeOutStart = 0.5,
@@ -57,10 +77,11 @@ export function useScrollScene({
         defaults: { ease: 'none', duration: 1 },
       })
 
-      if (camera) tl.to(sceneState.camera, { ...camera }, 0)
-      if (vehicle) tl.to(sceneState.vehicle, { ...vehicle }, 0)
-      if (light) tl.to(sceneState.light, { ...light }, 0)
-      if (sweep) tl.to(sweepState, { ...sweep }, 0)
+      if (camera) applyStages(tl, sceneState.camera, camera)
+      if (vehicle) applyStages(tl, sceneState.vehicle, vehicle)
+      if (light) applyStages(tl, sceneState.light, light)
+      if (sweep) applyStages(tl, sweepState, sweep)
+      if (wheelSpin) applyStages(tl, sceneState.wheelSpin, wheelSpin)
 
       // A "wake" bump overshoots the final intensity mid-section then settles
       // back down — reads as the headlights actively switching on rather than
@@ -74,10 +95,10 @@ export function useScrollScene({
           at,
         )
       } else if (headlight) {
-        tl.to(sceneState.headlight, { ...headlight }, 0)
+        applyStages(tl, sceneState.headlight, headlight)
       }
 
-      if (taillight) tl.to(sceneState.taillight, { ...taillight }, 0)
+      if (taillight) applyStages(tl, sceneState.taillight, taillight)
 
       textConfigs.forEach((cfg) => {
         const textEl = cfg.ref?.current

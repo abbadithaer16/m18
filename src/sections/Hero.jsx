@@ -21,7 +21,7 @@ export default function Hero() {
     headlight: HERO_END.headlight,
     headlightWake: { at: 0.52, peak: 0.24, settleDuration: 0.3 },
     taillight: HERO_END.taillight,
-    sweep: { progress: 1 },
+    sweep: { hero: 1 },
     textRef,
     textInitiallyVisible: true,
     textFadeOutStart: 0.22,

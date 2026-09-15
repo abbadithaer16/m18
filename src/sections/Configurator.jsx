@@ -1,7 +1,9 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import gsap from 'gsap'
 import { useScrollScene } from '../hooks/useScrollScene'
 import { CONFIGURATOR_END } from '../three/cameraKeyframes'
 import { useConfig } from '../state/ConfigContext'
+import { dragState } from '../state/sceneState'
 import Headline from '../components/Headline'
 import MagneticButton from '../components/MagneticButton'
 import Swatch from '../components/Swatch'
@@ -10,9 +12,18 @@ import './Configurator.css'
 
 const WHEEL_SWATCH_TONES = ['#c9cacc', '#9a9a9c', '#6f7073']
 
+// Small drag-offset biases (added on top of CONFIGURATOR_END's own 3/4
+// angle) so each category briefly turns the car toward its most flattering
+// view — body color to the canonical 3/4, wheels toward the front corner,
+// interior further round toward the cabin/glass — before handing control
+// back to the user's own drag.
+const CONFIG_BIAS = { body: 0, wheels: -0.34, interior: 0.55 }
+const BIAS_DURATION = 0.9
+
 export default function Configurator() {
   const sectionRef = useRef(null)
   const { bodyColor, wheel, interior, setBodyColorId, setWheelId, setInteriorId } = useConfig()
+  const prevSelection = useRef({ body: bodyColor.id, wheel: wheel.id, interior: interior.id })
 
   useScrollScene({
     sectionRef,
@@ -23,6 +34,24 @@ export default function Configurator() {
     headlight: CONFIGURATOR_END.headlight,
     taillight: CONFIGURATOR_END.taillight,
   })
+
+  useEffect(() => {
+    if (prevSelection.current.body === bodyColor.id) return
+    prevSelection.current.body = bodyColor.id
+    gsap.to(dragState, { rotY: CONFIG_BIAS.body, duration: BIAS_DURATION, ease: 'power2.inOut' })
+  }, [bodyColor.id])
+
+  useEffect(() => {
+    if (prevSelection.current.wheel === wheel.id) return
+    prevSelection.current.wheel = wheel.id
+    gsap.to(dragState, { rotY: CONFIG_BIAS.wheels, duration: BIAS_DURATION, ease: 'power2.inOut' })
+  }, [wheel.id])
+
+  useEffect(() => {
+    if (prevSelection.current.interior === interior.id) return
+    prevSelection.current.interior = interior.id
+    gsap.to(dragState, { rotY: CONFIG_BIAS.interior, duration: BIAS_DURATION, ease: 'power2.inOut' })
+  }, [interior.id])
 
   const wheelIndex = WHEEL_OPTIONS.findIndex((w) => w.id === wheel.id)
   const forgedLabel = `FORGED ${String(wheelIndex + 1).padStart(2, '0')}`

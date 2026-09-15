@@ -17,6 +17,7 @@ export default function SceneBody() {
     light: BODY_END.light,
     headlight: BODY_END.headlight,
     taillight: BODY_END.taillight,
+    sweep: { body: 1 },
     textRef,
     textFadeInEnd: 0.22,
     textFadeOutStart: 0.45,

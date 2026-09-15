@@ -130,7 +130,10 @@ export default function Vehicle({ bodyColor, wheelOption, interiorColor }) {
   }, [])
 
   // Smoothly tween the paint whenever the configurator selection changes
-  // (skips the tween on first mount so the car doesn't "flash" in).
+  // (skips the tween on first mount so the car doesn't "flash" in). ~650ms
+  // is the target window from the brief; a coordinated light pulse rides
+  // alongside it so the change reads as a controlled studio reveal rather
+  // than the color simply drifting.
   const prevColorId = useRef(bodyColor.id)
   useEffect(() => {
     if (prevColorId.current === bodyColor.id) return
@@ -140,14 +143,24 @@ export default function Vehicle({ bodyColor, wheelOption, interiorColor }) {
       r: target.r,
       g: target.g,
       b: target.b,
-      duration: 1.15,
+      duration: 0.65,
       ease: 'power2.inOut',
     })
     gsap.to(paintMaterial, {
       metalness: bodyColor.metalness,
       roughness: bodyColor.roughness,
-      duration: 1.15,
+      duration: 0.65,
       ease: 'power2.inOut',
+    })
+    const keyBefore = sceneState.light.key
+    const envBefore = sceneState.light.env
+    gsap.to(sceneState.light, {
+      key: keyBefore * 1.4,
+      env: envBefore * 1.25,
+      duration: 0.3,
+      ease: 'power2.out',
+      yoyo: true,
+      repeat: 1,
     })
   }, [bodyColor, paintMaterial])
 

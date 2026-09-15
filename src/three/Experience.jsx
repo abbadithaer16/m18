@@ -5,6 +5,7 @@ import Studio from './Studio'
 import Vehicle from './Vehicle'
 import { sceneState, dragState, pointerState } from '../state/sceneState'
 import { damp, clamp, springStep } from './maths'
+import { polarToCartesian } from './cameraRig'
 
 // A heavy object doesn't keep spinning long after you let go of it: the
 // coast bleeds off quickly and smoothly (still exponential, so it never
@@ -41,7 +42,7 @@ export default function Experience({ bodyColor, wheelOption, interiorColor, high
   const framedPosition = useRef(new THREE.Vector3())
 
   const prevYaw = useRef(sceneState.vehicle.rotY)
-  const prevCamZ = useRef(sceneState.camera.z)
+  const prevCamZ = useRef(camera.position.z)
   const roll = useRef({ value: 0, velocity: 0 })
   const pitch = useRef({ value: 0, velocity: 0 })
   const squat = useRef({ value: 0, velocity: 0 })
@@ -133,17 +134,31 @@ export default function Experience({ bodyColor, wheelOption, interiorColor, high
       )
     }
 
+    // camState.lx/lz are authored in the vehicle's own local frame (e.g. the
+    // wheel macro's look-at sits at the front-left wheel's local position),
+    // not world space — the vehicle itself is spinning underneath, so a raw
+    // world-space anchor would drift away from the part it's supposed to be
+    // tracking as soon as rotY moves off zero. Rotate the anchor by the
+    // vehicle's actual current yaw so the camera keeps looking at the same
+    // physical point on the car regardless of how it's currently oriented.
+    const yaw = vehicleRef.current ? vehicleRef.current.rotation.y : 0
+    const cosYaw = Math.cos(yaw)
+    const sinYaw = Math.sin(yaw)
+    const worldLx = camState.lx * cosYaw + camState.lz * sinYaw
+    const worldLz = -camState.lx * sinYaw + camState.lz * cosYaw
+
     // On narrow / portrait viewports a landscape-tuned camera position crops
     // the car badly (a PerspectiveCamera's fov is vertical, so a tall/thin
     // frustum shows far less width). Pull the camera back from the look-at
-    // point proportionally so the full car still fits horizontally.
+    // point proportionally so the full car still fits horizontally — with a
+    // polar rig this is just scaling the radius (and the height offset from
+    // the look-at point) rather than an arbitrary vector lerp.
     const aspect = size.width / size.height
-    const frameScale = aspect < 1.1 ? THREE.MathUtils.clamp(1.15 / aspect, 1, 2.4) : 1
-    framedPosition.current.set(
-      camState.lx + (camState.x - camState.lx) * frameScale,
-      camState.ly + (camState.y - camState.ly) * frameScale,
-      camState.lz + (camState.z - camState.lz) * frameScale,
-    )
+    const frameScale = aspect < 1.1 ? THREE.MathUtils.clamp(1.15 / aspect, 1, 2.7) : 1
+    const scaledRadius = camState.radius * frameScale
+    const scaledHeight = camState.ly + (camState.height - camState.ly) * frameScale
+    const cart = polarToCartesian(camState.angle, scaledRadius, scaledHeight, worldLx, worldLz)
+    framedPosition.current.set(cart.x, cart.y, cart.z)
 
     // Camera position trails slightly behind its look-at target — a heavier,
     // more deliberate signature than the vehicle's own damping — while the
@@ -152,9 +167,9 @@ export default function Experience({ bodyColor, wheelOption, interiorColor, high
     camera.position.y = damp(camera.position.y, framedPosition.current.y, 2.6, dt)
     camera.position.z = damp(camera.position.z, framedPosition.current.z, 2.6, dt)
 
-    lookTarget.current.x = damp(lookTarget.current.x, camState.lx, 2.9, dt)
+    lookTarget.current.x = damp(lookTarget.current.x, worldLx, 2.9, dt)
     lookTarget.current.y = damp(lookTarget.current.y, camState.ly, 2.9, dt)
-    lookTarget.current.z = damp(lookTarget.current.z, camState.lz, 2.9, dt)
+    lookTarget.current.z = damp(lookTarget.current.z, worldLz, 2.9, dt)
     camera.lookAt(lookTarget.current)
 
     if (camera.isPerspectiveCamera) {

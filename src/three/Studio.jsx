@@ -21,19 +21,24 @@ export default function Studio({ highQuality = true }) {
   const floorMatRef = useRef(null)
   const stripA = useRef(null)
   const stripB = useRef(null)
+  const stripC = useRef(null)
 
   useFrame((_, dt) => {
     const { light } = sceneState
     // The key light's position is what actually paints a moving specular
     // highlight across the clearcoat (direct-light BRDF, not the baked
     // env probe) — this is the "reflection travels across the paint"
-    // surface, driven by two real inputs rather than a fake overlay: the
-    // hero's scroll-tied sweep across the hood/shoulder, and ambient
+    // surface, driven by real inputs rather than a fake overlay: the
+    // hero's scroll-tied sweep across the hood/shoulder, a second sweep
+    // that continues it across the body/shoulder line, and ambient
     // pointer parallax for hover interactivity.
-    const sweep = sweepState.progress
-    const keyTargetX = lerp(1.7, 4.6, sweep) + pointerState.x * 0.75
-    const keyTargetY = lerp(7.1, 5.3, sweep) + pointerState.y * -0.25
-    const sweepBoost = 1 + Math.sin(THREE.MathUtils.clamp(sweep, 0, 1) * Math.PI) * 0.16
+    const heroSweep = sweepState.hero
+    const bodySweep = sweepState.body
+    const keyTargetX = lerp(1.7, 4.6, heroSweep) + lerp(0, 2.6, bodySweep) + pointerState.x * 0.75
+    const keyTargetY = lerp(7.1, 5.3, heroSweep) + lerp(0, -1.1, bodySweep) + pointerState.y * -0.25
+    const heroBoost = Math.sin(THREE.MathUtils.clamp(heroSweep, 0, 1) * Math.PI) * 0.16
+    const bodyBoost = Math.sin(THREE.MathUtils.clamp(bodySweep, 0, 1) * Math.PI) * 0.14
+    const sweepBoost = 1 + heroBoost + bodyBoost
 
     if (keyRef.current) {
       keyRef.current.intensity = damp(keyRef.current.intensity, light.key * 6.5 * sweepBoost, 6, dt)
@@ -51,13 +56,17 @@ export default function Studio({ highQuality = true }) {
       floorMatRef.current.opacity = damp(floorMatRef.current.opacity, light.floor, 5, dt)
     }
 
-    // Background reflection bars: a primary strip travels with the hero's
-    // hood/shoulder sweep (never idle on its own), a secondary strip only
-    // ever answers pointer parallax — both physically motivated, neither
-    // running on an autonomous clock.
+    // Background reflection bars: stripA travels with the hero's
+    // hood/shoulder sweep, stripC continues the motion lower and wider as
+    // the body scene reveals the flank, stripB only ever answers pointer
+    // parallax — all physically motivated, none running on an idle clock.
     if (stripA.current) {
-      stripA.current.position.x = lerp(-4.2, 4.2, sweep) + pointerState.x * 0.5
-      stripA.current.material.opacity = 0.22 + sweepBoost * 0.16
+      stripA.current.position.x = lerp(-4.2, 4.2, heroSweep) + pointerState.x * 0.5
+      stripA.current.material.opacity = 0.22 + heroBoost
+    }
+    if (stripC.current) {
+      stripC.current.position.x = lerp(-5, 5.5, bodySweep) + pointerState.x * 0.5
+      stripC.current.material.opacity = 0.16 + bodyBoost
     }
     if (stripB.current) {
       stripB.current.position.x = 3.2 + pointerState.x * 0.9
@@ -117,10 +126,14 @@ export default function Studio({ highQuality = true }) {
         color="#cfd6e0"
       />
 
-      {/* reflection strips: primary tracks the hero sweep, secondary tracks pointer */}
+      {/* reflection strips: A tracks the hero sweep, C the body sweep, B tracks pointer */}
       <mesh ref={stripA} position={[-3, 3.2, -3]} rotation={[0, 0.3, 0]}>
         <planeGeometry args={[3.2, 0.12]} />
         <meshBasicMaterial color="#e9e6dd" transparent opacity={0.35} />
+      </mesh>
+      <mesh ref={stripC} position={[-4, 1.6, -2.6]} rotation={[0, 0.18, 0]}>
+        <planeGeometry args={[4.2, 0.16]} />
+        <meshBasicMaterial color="#dcdad2" transparent opacity={0.16} />
       </mesh>
       <mesh ref={stripB} position={[3.2, 2.4, -4]} rotation={[0, -0.25, 0]}>
         <planeGeometry args={[2.6, 0.1]} />
