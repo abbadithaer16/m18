@@ -16,12 +16,29 @@ export const sceneState = {
   taillight: { intensity: 0.22 },
 }
 
+/**
+ * Directed, one-shot progress (0→1) for the hero→body light sweep: a
+ * reflection strip travels across the hood/shoulder line as the hero
+ * headline exits. Distinct from the ambient pointer-driven reflection
+ * response so the two don't fight each other.
+ */
+export const sweepState = { progress: 0 }
+
 /** Drag-to-rotate offset, added on top of the scroll-driven vehicle.rotY. */
 export const dragState = {
   active: false,
   rotY: 0,
   velocity: 0,
 }
+
+// Beyond DRAG_COMFORT_LIMIT, the swept-profile body starts reading nearly
+// front/rear-on — foreshortened into an unflattering silhouette rather than
+// a car. Active drag input (not the momentum coast, which is already kept
+// short) gets progressively more resistant from there — a heavy dial, not
+// a hard stop: a sustained drag can still push all the way around, it just
+// takes real, deliberate effort.
+export const DRAG_COMFORT_LIMIT = 0.5
+export const DRAG_RESISTANCE_K = 16
 
 /** Normalized (-1..1) pointer position for ambient parallax. */
 export const pointerState = { x: 0, y: 0 }
@@ -32,3 +49,4 @@ export const configState = {
   wheelIndex: 0,
   interiorIndex: 0,
 }
+

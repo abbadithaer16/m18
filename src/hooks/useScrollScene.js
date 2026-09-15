@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { sceneState } from '../state/sceneState'
+import { sceneState, sweepState } from '../state/sceneState'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -32,7 +32,9 @@ export function useScrollScene({
   vehicle,
   light,
   headlight,
+  headlightWake,
   taillight,
+  sweep,
   textRef,
   textFadeInEnd = 0.3,
   textFadeOutStart = 0.5,
@@ -58,7 +60,23 @@ export function useScrollScene({
       if (camera) tl.to(sceneState.camera, { ...camera }, 0)
       if (vehicle) tl.to(sceneState.vehicle, { ...vehicle }, 0)
       if (light) tl.to(sceneState.light, { ...light }, 0)
-      if (headlight) tl.to(sceneState.headlight, { ...headlight }, 0)
+      if (sweep) tl.to(sweepState, { ...sweep }, 0)
+
+      // A "wake" bump overshoots the final intensity mid-section then settles
+      // back down — reads as the headlights actively switching on rather than
+      // the value merely drifting to its target alongside everything else.
+      if (headlightWake) {
+        const { at = 0.55, peak, settleDuration = 0.25, ease = 'power2.out' } = headlightWake
+        tl.to(sceneState.headlight, { intensity: peak, duration: Math.max(at, 0.001), ease }, 0)
+        tl.to(
+          sceneState.headlight,
+          { ...headlight, duration: Math.max(settleDuration, 0.001), ease: 'power2.inOut' },
+          at,
+        )
+      } else if (headlight) {
+        tl.to(sceneState.headlight, { ...headlight }, 0)
+      }
+
       if (taillight) tl.to(sceneState.taillight, { ...taillight }, 0)
 
       textConfigs.forEach((cfg) => {
