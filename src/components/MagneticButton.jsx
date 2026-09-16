@@ -29,8 +29,10 @@ export default function MagneticButton({ as = 'button', className = '', children
   }
 
   const handleLeave = () => {
-    gsap.to(innerRef.current, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' })
-    gsap.to(outerRef.current, { x: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' })
+    // power3.out settles cleanly with no overshoot — an elastic ease reads
+    // as a bounce, which is explicitly off the table for this brand.
+    gsap.to(innerRef.current, { x: 0, y: 0, duration: 0.55, ease: 'power3.out' })
+    gsap.to(outerRef.current, { x: 0, duration: 0.55, ease: 'power3.out' })
   }
 
   const Component = as

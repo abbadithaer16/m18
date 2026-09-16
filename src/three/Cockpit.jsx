@@ -1,6 +1,7 @@
 import { RoundedBox } from '@react-three/drei'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
+import gsap from 'gsap'
 
 /**
  * Simplified, stylized cockpit — not an attempt at photoreal interior
@@ -13,11 +14,15 @@ import * as THREE from 'three'
 export default function Cockpit({ interiorColor }) {
   const trimMaterial = useMemo(
     () => new THREE.MeshStandardMaterial({ color: interiorColor.hex, roughness: 0.72, metalness: 0.12 }),
-    [interiorColor.hex],
+    // Built once; later swaps are tweened in place below so the interior
+    // never hard-cuts between colors.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
   const accentMaterial = useMemo(
     () => new THREE.MeshStandardMaterial({ color: interiorColor.accent, roughness: 0.4, metalness: 0.4 }),
-    [interiorColor.accent],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
   const displayMaterial = useMemo(
     () =>
@@ -29,6 +34,22 @@ export default function Cockpit({ interiorColor }) {
       }),
     [],
   )
+
+  const prevId = useRef(interiorColor.id)
+  useEffect(() => {
+    if (prevId.current === interiorColor.id) return
+    prevId.current = interiorColor.id
+    const trimTarget = new THREE.Color(interiorColor.hex)
+    const accentTarget = new THREE.Color(interiorColor.accent)
+    gsap.to(trimMaterial.color, { r: trimTarget.r, g: trimTarget.g, b: trimTarget.b, duration: 0.6, ease: 'power2.inOut' })
+    gsap.to(accentMaterial.color, {
+      r: accentTarget.r,
+      g: accentTarget.g,
+      b: accentTarget.b,
+      duration: 0.6,
+      ease: 'power2.inOut',
+    })
+  }, [interiorColor, trimMaterial, accentMaterial])
 
   return (
     <group>

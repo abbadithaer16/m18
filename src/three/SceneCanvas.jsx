@@ -4,6 +4,7 @@ import { AdaptiveDpr, AdaptiveEvents, PerformanceMonitor } from '@react-three/dr
 import * as THREE from 'three'
 import Experience from './Experience'
 import { sceneState } from '../state/sceneState'
+import { polarToCartesian } from './cameraRig'
 
 /**
  * Hosts the persistent, fixed-position WebGL canvas behind the whole page.
@@ -12,6 +13,13 @@ import { sceneState } from '../state/sceneState'
  */
 export default function SceneCanvas({ bodyColor, wheelOption, interiorColor, isMobile }) {
   const [dprCap, setDprCap] = useState(isMobile ? 1.5 : 2)
+  const { x, y, z } = polarToCartesian(
+    sceneState.camera.angle,
+    sceneState.camera.radius,
+    sceneState.camera.height,
+    sceneState.camera.lx,
+    sceneState.camera.lz,
+  )
 
   return (
     <Canvas
@@ -19,7 +27,7 @@ export default function SceneCanvas({ bodyColor, wheelOption, interiorColor, isM
       dpr={[1, dprCap]}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       camera={{
-        position: [sceneState.camera.x, sceneState.camera.y, sceneState.camera.z],
+        position: [x, y, z],
         fov: sceneState.camera.fov,
         near: 0.1,
         far: 60,

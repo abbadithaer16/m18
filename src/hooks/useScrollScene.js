@@ -1,9 +1,28 @@
 import { useLayoutEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { sceneState } from '../state/sceneState'
+import { sceneState, sweepState } from '../state/sceneState'
 
 gsap.registerPlugin(ScrollTrigger)
+
+/**
+ * Applies a tween (or `spec`) to `target` within a scrubbed timeline. `spec`
+ * is normally a plain vars object animated across the whole timeline (the
+ * original single-stage behavior). Passing an array of
+ * `{ at, duration, vars, ease }` stages instead lets a single scene stage a
+ * multi-beat move — e.g. "hold near-black, then ignite the headlights, then
+ * settle" — as sequential segments of the same scrubbed timeline rather
+ * than one linear blend, without needing a second ScrollTrigger.
+ */
+function applyStages(tl, target, spec) {
+  if (Array.isArray(spec)) {
+    spec.forEach(({ at = 0, duration = 1, vars, ease = 'none' }) => {
+      tl.to(target, { ...vars, duration: Math.max(duration, 0.001), ease }, at)
+    })
+  } else {
+    tl.to(target, { ...spec }, 0)
+  }
+}
 
 /**
  * Ties one DOM section's own scroll range to the shared `sceneState` object
@@ -32,7 +51,10 @@ export function useScrollScene({
   vehicle,
   light,
   headlight,
+  headlightWake,
   taillight,
+  sweep,
+  wheelSpin,
   textRef,
   textFadeInEnd = 0.3,
   textFadeOutStart = 0.5,
@@ -55,11 +77,28 @@ export function useScrollScene({
         defaults: { ease: 'none', duration: 1 },
       })
 
-      if (camera) tl.to(sceneState.camera, { ...camera }, 0)
-      if (vehicle) tl.to(sceneState.vehicle, { ...vehicle }, 0)
-      if (light) tl.to(sceneState.light, { ...light }, 0)
-      if (headlight) tl.to(sceneState.headlight, { ...headlight }, 0)
-      if (taillight) tl.to(sceneState.taillight, { ...taillight }, 0)
+      if (camera) applyStages(tl, sceneState.camera, camera)
+      if (vehicle) applyStages(tl, sceneState.vehicle, vehicle)
+      if (light) applyStages(tl, sceneState.light, light)
+      if (sweep) applyStages(tl, sweepState, sweep)
+      if (wheelSpin) applyStages(tl, sceneState.wheelSpin, wheelSpin)
+
+      // A "wake" bump overshoots the final intensity mid-section then settles
+      // back down — reads as the headlights actively switching on rather than
+      // the value merely drifting to its target alongside everything else.
+      if (headlightWake) {
+        const { at = 0.55, peak, settleDuration = 0.25, ease = 'power2.out' } = headlightWake
+        tl.to(sceneState.headlight, { intensity: peak, duration: Math.max(at, 0.001), ease }, 0)
+        tl.to(
+          sceneState.headlight,
+          { ...headlight, duration: Math.max(settleDuration, 0.001), ease: 'power2.inOut' },
+          at,
+        )
+      } else if (headlight) {
+        applyStages(tl, sceneState.headlight, headlight)
+      }
+
+      if (taillight) applyStages(tl, sceneState.taillight, taillight)
 
       textConfigs.forEach((cfg) => {
         const textEl = cfg.ref?.current
