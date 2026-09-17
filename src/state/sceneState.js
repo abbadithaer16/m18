@@ -12,7 +12,7 @@
 // y) — see three/cameraRig.js. Every scroll transition is therefore an arc
 // around the vehicle rather than a straight-line lerp through space.
 export const sceneState = {
-  camera: { angle: 0.119, radius: 9.266, height: 1.6, lx: 0, ly: 0.62, lz: 0, fov: 22 },
+  camera: { angle: 0.119, radius: 10.8, height: 1.3, lx: 0, ly: 0.5, lz: 0, fov: 22 },
   vehicle: { rotY: 0.32, posY: 0, posX: 0 },
   light: { key: 0.55, rim: 0.7, fill: 0.16, env: 0.4, floor: 0.16, exposure: 0.6 },
   headlight: { intensity: 0.08 },

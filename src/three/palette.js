@@ -51,3 +51,14 @@ export const GLASS = {
   opacity: 0.55,
   depthWrite: false,
 }
+
+// Dark aero surfaces (splitter, diffuser, wing, canards) — distinct from
+// GLOSS_BLACK trim: a touch of clearcoat sheen over a low-metalness base,
+// reading as a resin-finished composite panel rather than painted plastic.
+export const CARBON_FIBER = {
+  color: '#0c0c0e',
+  metalness: 0.2,
+  roughness: 0.38,
+  clearcoat: 0.55,
+  clearcoatRoughness: 0.28,
+}

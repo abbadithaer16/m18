@@ -17,9 +17,15 @@ const RIM_MATERIAL_PARAMS = {
   turbine: { color: '#95969a', metalness: 1, roughness: 0.3 },
 }
 
-const TIRE_RADIUS = 0.335
-const TIRE_TUBE = 0.1
-const RIM_RADIUS = 0.235
+// Wide racing rubber, sized against the body: real LMP tire diameter runs
+// roughly 65% of the car's overall height, and the fender-peak stations in
+// Vehicle.jsx are cut to just clear this tire's outer radius (0.29) — the
+// wheel ending up taller than the whole car was the first pass's bug.
+// WHEEL_Y there is set to TIRE_RADIUS + TIRE_TUBE so the tire's outer edge
+// sits exactly on the floor plane.
+const TIRE_RADIUS = 0.18
+const TIRE_TUBE = 0.11
+const RIM_RADIUS = 0.13
 
 /**
  * Wheel assembly: tire + forged rim (spoke style driven by `wheelOption`) +
@@ -66,7 +72,7 @@ export default function Wheel({ position, side = 1, wheelOption }) {
     [spokeCount],
   )
 
-  const spokeWidth = style === 'mesh' ? 0.05 : style === 'turbine' ? 0.12 : 0.075
+  const spokeWidth = style === 'mesh' ? 0.028 : style === 'turbine' ? 0.066 : 0.042
 
   useFrame((_, dt) => {
     if (!spinRef.current) return
@@ -81,32 +87,32 @@ export default function Wheel({ position, side = 1, wheelOption }) {
         </mesh>
 
         <mesh material={rimMaterial} rotation={[Math.PI / 2, 0, 0]} castShadow>
-          <cylinderGeometry args={[RIM_RADIUS, RIM_RADIUS * 0.96, 0.15, 24, 1, true]} />
+          <cylinderGeometry args={[RIM_RADIUS, RIM_RADIUS * 0.96, 0.16, 24, 1, true]} />
         </mesh>
 
         <mesh material={rimMaterial}>
-          <torusGeometry args={[RIM_RADIUS, 0.022, 10, 28]} />
+          <torusGeometry args={[RIM_RADIUS, 0.016, 10, 28]} />
         </mesh>
 
         {spokeAngles.map((angle) => (
           <group key={angle} rotation={[0, 0, angle]}>
             <mesh position={[RIM_RADIUS * 0.5, 0, 0]} material={rimMaterial}>
-              <boxGeometry args={[RIM_RADIUS * 0.86, spokeWidth, 0.05]} />
+              <boxGeometry args={[RIM_RADIUS * 0.86, spokeWidth, 0.045]} />
             </mesh>
           </group>
         ))}
 
         <mesh material={hubMaterial} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.062, 0.062, 0.17, 16]} />
+          <cylinderGeometry args={[0.04, 0.04, 0.16, 16]} />
         </mesh>
 
-        <mesh material={discMaterial} position={[0, 0, side * 0.085]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.225, 0.225, 0.018, 28]} />
+        <mesh material={discMaterial} position={[0, 0, side * 0.075]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.115, 0.115, 0.014, 28]} />
         </mesh>
       </group>
 
-      <mesh material={caliperMaterial} position={[0.09, 0.15, side * 0.085]}>
-        <boxGeometry args={[0.17, 0.13, 0.095]} />
+      <mesh material={caliperMaterial} position={[0.06, 0.09, side * 0.075]}>
+        <boxGeometry args={[0.11, 0.085, 0.06]} />
       </mesh>
     </group>
   )
