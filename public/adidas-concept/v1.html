@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Velocity 01 Concept</title>
+<meta name="description" content="Unofficial design concept. Not affiliated with or endorsed by adidas AG.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,800;1,800;1,900&family=Barlow:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: sport-campaign scroll. Giant outlined word behind a transparent
+   WebGL stage, product UI in front; text parks on one side, shoe on the other. */
+:root {
+    --bg: #0d0d0d;
+    --fg: #ffffff;
+    --text: #c9c9c9;
+    --muted: #7c7c7c;
+    --accent: #ffffff;         /* follows the selected colourway */
+    --line: rgba(255, 255, 255, 0.12);
+    --panel: rgba(20, 20, 20, 0.6);
+    --display: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
+    --body: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+    --gutter: max(16px, min(56px, 5vw));
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --glow-x: 70%;
+    color-scheme: dark;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: var(--bg); scrollbar-width: none; }
+::-webkit-scrollbar { display: none; width: 0; }
+body { font-family: var(--body); color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+@media (pointer: fine) { body, body * { cursor: none !important; } }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ---------- Stage layers ---------- */
+.backdrop {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    background:
+        radial-gradient(42vmax 42vmax at var(--glow-x) 55%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+        radial-gradient(120vmax 80vmax at 50% 120%, #1c1c1c, transparent 60%);
+    transition: background 0.8s;
+}
+.big-word {
+    position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%) skewX(-8deg);
+    font-family: var(--display); font-weight: 900; font-style: italic; text-transform: uppercase;
+    font-size: clamp(160px, 34vw, 560px); line-height: 0.8; letter-spacing: -0.02em; white-space: nowrap;
+    color: transparent; -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.13);
+    transition: opacity 0.6s var(--ease), transform 0.8s var(--ease);
+}
+.big-word.swap { opacity: 0; transform: translate(-50%, -46%) skewX(-8deg); }
+#webgl { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; display: block; pointer-events: none; }
+
+/* ---------- Cursor ---------- */
+.cursor-inner, .cursor-outer { position: fixed; top: 0; left: 0; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
+.cursor-inner { width: 6px; height: 6px; background: #fff; z-index: 9999; }
+.cursor-outer { width: 38px; height: 38px; border: 1.5px solid rgba(255,255,255,0.6); z-index: 9998; transition: width 0.3s, height 0.3s, background 0.3s, border-color 0.3s; }
+body:not(.has-pointer) .cursor-inner, body:not(.has-pointer) .cursor-outer { opacity: 0; }
+body.hovering .cursor-outer { width: 62px; height: 62px; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+@media (pointer: coarse) { .cursor-inner, .cursor-outer { display: none; } }
+
+/* ---------- Disclaimer + header ---------- */
+.disclaimer {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    padding-inline: 16px; background: #fff; color: #000;
+    font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; text-align: center;
+}
+.main-header {
+    position: fixed; top: 28px; left: 0; right: 0; z-index: 50; height: 64px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    border-bottom: 1px solid var(--line);
+    transition: background 0.4s;
+}
+.main-header.scrolled { background: rgba(13, 13, 13, 0.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.wordmark { font-family: var(--body); font-weight: 600; font-size: 26px; letter-spacing: -1px; color: #fff; text-transform: lowercase; }
+.header-nav { display: flex; gap: 28px; }
+.nav-link { font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.7); transition: color 0.2s; position: relative; }
+.nav-link::after { content: ""; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.3s var(--ease); }
+.nav-link:hover, .nav-link.current { color: #fff; }
+.nav-link:hover::after, .nav-link.current::after { transform: scaleX(1); }
+.header-tools { display: flex; align-items: center; gap: 20px; font-size: 13px; font-weight: 500; }
+.bag { display: inline-flex; align-items: center; gap: 8px; }
+.bag b { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; background: var(--accent); color: #000; font-size: 11px; border-radius: 10px; transition: background 0.6s; }
+.menu-toggle { display: none; width: 40px; height: 40px; background: none; border: 0; position: relative; }
+.menu-toggle span { position: absolute; left: 9px; right: 9px; height: 2px; background: #fff; transition: transform 0.3s, top 0.3s; }
+.menu-toggle span:first-child { top: 15px; } .menu-toggle span:last-child { top: 23px; }
+body.menu-open .menu-toggle span:first-child { top: 19px; transform: rotate(45deg); }
+body.menu-open .menu-toggle span:last-child { top: 19px; transform: rotate(-45deg); }
+@media (max-width: 900px) {
+    .header-nav {
+        position: fixed; inset: 92px 0 0 0; z-index: -1; flex-direction: column; gap: 6px;
+        padding: 32px max(var(--gutter), env(safe-area-inset-left, 0px));
+        background: rgba(13,13,13,0.97); opacity: 0; visibility: hidden; transition: opacity 0.4s, visibility 0.4s;
+    }
+    body.menu-open .header-nav { opacity: 1; visibility: visible; }
+    .header-nav .nav-link { font-size: 48px; line-height: 1.1; font-style: italic; }
+    .menu-toggle { display: block; }
+    .header-tools .search { display: none; }
+}
+
+/* ---------- Progress rail ---------- */
+.rail { position: fixed; right: max(18px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); z-index: 40; display: flex; flex-direction: column; gap: 8px; }
+.rail button { background: none; border: 0; padding: 4px 8px; }
+.rail .dash { display: block; width: 3px; height: 30px; background: rgba(255,255,255,0.15); overflow: hidden; }
+.rail .fill { display: block; width: 100%; height: 0%; background: var(--accent); transition: background 0.6s; }
+@media (max-width: 760px) { .rail { display: none; } }
+
+/* ---------- Sections ---------- */
+main { position: relative; z-index: 10; }
+.section {
+    position: relative; min-height: 125vh; display: flex; align-items: center;
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(calc(var(--gutter) + 36px), env(safe-area-inset-right, 0px));
+    padding-block: 140px 100px;
+}
+.section[data-side="left"] .inner { margin-right: auto; }
+.section[data-side="right"] .inner { margin-left: auto; }
+.section[data-side="center"] .inner { margin-inline: auto; text-align: center; }
+.inner { width: min(540px, 100%); min-width: 0; }
+
+.eyebrow { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: #000; background: var(--accent); padding: 5px 10px; margin-bottom: 22px; transition: background 0.6s; }
+.title {
+    font-family: var(--display); font-weight: 900; font-style: italic; text-transform: uppercase;
+    font-size: clamp(64px, 9vw, 140px); line-height: 0.86; letter-spacing: -0.01em; color: var(--fg);
+    margin-bottom: 26px; text-wrap: balance;
+}
+.title .word { display: inline-block; white-space: nowrap; }
+.title .char { display: inline-block; opacity: 0; transform: translateY(70%) skewX(-12deg); transition: opacity 0.6s var(--ease), transform 0.7s var(--ease); }
+.in .title .char { opacity: 1; transform: none; }
+.lede { font-size: 17px; line-height: 1.6; max-width: 44ch; }
+.section[data-side="center"] .lede { margin-inline: auto; }
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); transition-delay: 0.3s; }
+.in .reveal { opacity: 1; transform: none; }
+.in .reveal.d2 { transition-delay: 0.45s; }
+.in .reveal.d3 { transition-delay: 0.6s; }
+
+.btn {
+    display: inline-flex; align-items: center; gap: 14px; height: 50px; padding: 0 22px;
+    font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: 1.5px; text-transform: uppercase;
+    border: 0; position: relative; transition: transform 0.25s var(--ease), background 0.3s, color 0.3s;
+}
+.btn .arrow { font-family: var(--body); font-size: 20px; transition: transform 0.3s var(--ease); }
+.btn:hover .arrow { transform: translateX(5px); }
+.btn-solid { background: #fff; color: #000; box-shadow: 4px 4px 0 var(--accent); }
+.btn-solid:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--accent); }
+.btn-ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+.btn-ghost:hover { border-color: #fff; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
+
+/* Hero */
+#hero { min-height: 100vh; align-items: flex-end; padding-bottom: 10vh; }
+#hero .title { font-size: clamp(76px, 12vw, 200px); }
+.hero-meta { position: absolute; right: max(calc(var(--gutter) + 36px), env(safe-area-inset-right, 0px)); bottom: 10vh; text-align: right; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); line-height: 1.8; }
+.hero-meta strong { display: block; font-family: var(--display); font-style: italic; font-weight: 800; font-size: 28px; letter-spacing: 1px; color: #fff; }
+
+/* Shoe / buy box */
+.buy { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 26px; margin-top: 8px; }
+.buy-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 20px; }
+.buy-name { font-family: var(--display); font-weight: 800; font-size: 26px; letter-spacing: 0.5px; text-transform: uppercase; color: #fff; }
+.buy-price { font-size: 13px; color: var(--muted); }
+.label { font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: flex; justify-content: space-between; gap: 12px; }
+.label span:last-child { color: #fff; letter-spacing: 1px; }
+.colourways { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+.cw { width: 52px; height: 52px; border: 1px solid var(--line); padding: 0; position: relative; overflow: hidden; background: #000; }
+.cw i { position: absolute; inset: 0; }
+.cw i:last-child { inset: auto 0 0 0; height: 30%; }
+.cw[aria-pressed="true"] { outline: 2px solid #fff; outline-offset: 2px; }
+.sizes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 22px; }
+.size { height: 42px; background: transparent; border: 1px solid var(--line); font-size: 14px; font-variant-numeric: tabular-nums; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+.size:hover { border-color: #fff; }
+.size[aria-pressed="true"] { background: #fff; color: #000; border-color: #fff; }
+.buy .btn { width: 100%; justify-content: space-between; }
+.note { margin-top: 14px; font-size: 13px; color: var(--accent); min-height: 1.3em; transition: color 0.6s; }
+
+/* Tech */
+.features { margin-top: 30px; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.feature { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.feature .tag { font-family: var(--display); font-weight: 800; font-style: italic; font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); padding-top: 4px; transition: color 0.6s; }
+.feature h3 { font-family: var(--display); font-weight: 800; font-size: 28px; text-transform: uppercase; color: #fff; line-height: 1; margin-bottom: 8px; }
+.feature p { font-size: 15px; line-height: 1.55; }
+
+/* Apparel */
+#apparel .inner { width: min(520px, 100%); }
+.model-credit { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.model-credit a { text-decoration: underline; }
+.product-card {
+    position: relative; background: #c2c2c3; overflow: hidden; margin-top: 6px;
+    aspect-ratio: 1312 / 1199; max-width: 100%;
+    transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.5s var(--ease);
+    box-shadow: 10px 10px 0 var(--accent);
+}
+.product-card img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 0.8s var(--ease); }
+.product-card:hover img { transform: scale(1.08); }
+.product-badge { position: absolute; top: 14px; left: 14px; background: #000; color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 5px 10px; }
+.product-info { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin-top: 26px; }
+.product-info .buy-name { font-size: 30px; }
+.apparel-sizes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+.apparel-sizes .size { width: 54px; }
+
+/* Specs */
+#specs .inner { width: min(1100px, 100%); }
+.specs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 44px; border-top: 2px solid #fff; text-align: left; }
+.spec { padding: 22px 20px 0 0; min-width: 0; }
+.spec + .spec { padding-left: 20px; border-left: 1px solid var(--line); }
+.spec .v { font-family: var(--display); font-weight: 900; font-style: italic; font-size: clamp(54px, 6vw, 96px); line-height: 0.9; color: #fff; font-variant-numeric: tabular-nums; }
+.spec .v small { font-size: 0.4em; color: var(--accent); margin-left: 4px; font-style: normal; transition: color 0.6s; }
+.spec .k { margin-top: 10px; font-size: 14px; line-height: 1.45; }
+
+/* Sports */
+#sports .inner { width: min(1200px, 100%); }
+.sports { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 36px; text-align: left; }
+.sport {
+    position: relative; min-height: 190px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;
+    background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    overflow: hidden; transition: border-color 0.3s, transform 0.3s var(--ease);
+}
+.sport::before { content: ""; position: absolute; inset: 0; background: var(--accent); transform: translateY(101%); transition: transform 0.45s var(--ease); z-index: -1; }
+.sport:hover { transform: translateY(-4px); border-color: var(--accent); color: #000; }
+.sport:hover::before { transform: none; }
+.sport:hover h3, .sport:hover .go { color: #000; }
+.sport h3 { font-family: var(--display); font-weight: 900; font-style: italic; font-size: 44px; text-transform: uppercase; color: #fff; line-height: 0.9; transition: color 0.3s; }
+.sport p { font-size: 14px; line-height: 1.5; max-width: 30ch; }
+.sport .go { position: absolute; top: 20px; right: 22px; font-size: 22px; color: #fff; transition: color 0.3s, transform 0.3s var(--ease); }
+.sport:hover .go { transform: translateX(4px); }
+
+/* Club */
+#club { min-height: 100vh; }
+.club-form { display: flex; gap: 0; margin-top: 30px; border: 1px solid rgba(255,255,255,0.4); background: var(--panel); }
+.club-form input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 0 18px; height: 54px; font-size: 16px; }
+.club-form input:focus { outline: none; }
+.club-form .btn { height: 54px; box-shadow: none; }
+.perks { list-style: none; margin-top: 26px; display: grid; gap: 10px; }
+.perks li { display: flex; gap: 12px; align-items: baseline; font-size: 15px; }
+.perks li::before { content: ""; width: 10px; height: 2px; background: var(--accent); flex: none; transform: translateY(-4px); transition: background 0.6s; }
+
+/* Footer */
+footer {
+    position: relative; z-index: 10; background: #fff; color: #000;
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    padding-block: 56px 32px;
+}
+.footer-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; }
+.footer-cols h4 { font-family: var(--display); font-weight: 800; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+.footer-cols a { display: block; font-size: 14px; line-height: 2; color: #333; }
+.footer-cols a:hover { text-decoration: underline; }
+.footer-bottom { margin-top: 48px; padding-top: 20px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 12px; color: #555; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .section { min-height: auto; padding-block: 18vh; padding-right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
+    #hero { min-height: 100vh; padding-bottom: 8vh; }
+    .section .inner { margin-inline: 0 !important; }
+    .section::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(to bottom, transparent, rgba(13,13,13,0.6) 25%, rgba(13,13,13,0.6) 75%, transparent); }
+    #hero::before { background: linear-gradient(to bottom, transparent 45%, rgba(13,13,13,0.7)); }
+    .hero-meta { display: none; }
+    .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .spec, .spec + .spec { padding: 20px 14px 20px 0; border-left: 0; }
+    .spec:nth-child(even) { padding-left: 14px; border-left: 1px solid var(--line); }
+    .sports { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .footer-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    .sports { grid-template-columns: minmax(0, 1fr); }
+    .feature { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .sizes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .club-form { flex-direction: column; }
+    .club-form .btn { justify-content: space-between; }
+    .disclaimer { font-size: 9px; letter-spacing: 0.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .title .char, .reveal { transition: none !important; opacity: 1 !important; transform: none !important; }
+}
+</style>
+</head>
+<body>
+    <div class="cursor-inner"></div>
+    <div class="cursor-outer"></div>
+
+    <div class="disclaimer">Unofficial concept · not affiliated with adidas AG</div>
+
+    <header class="main-header" id="header">
+        <a href="#hero" class="wordmark" data-scroll aria-label="Back to top">adidas</a>
+        <nav class="header-nav" aria-label="Main">
+            <a href="#shoe" class="nav-link" data-scroll>The shoe</a>
+            <a href="#apparel" class="nav-link" data-scroll>Apparel</a>
+            <a href="#tech" class="nav-link" data-scroll>Tech</a>
+            <a href="#sports" class="nav-link" data-scroll>Sports</a>
+            <a href="#club" class="nav-link" data-scroll>Club</a>
+        </nav>
+        <div class="header-tools">
+            <span class="search">Search</span>
+            <span class="bag">Bag <b id="bag-count">0</b></span>
+            <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+        </div>
+    </header>
+
+    <div class="backdrop" aria-hidden="true"><div class="big-word" id="big-word">Run</div></div>
+    <canvas id="webgl"></canvas>
+    <nav class="rail" id="rail" aria-label="Sections"></nav>
+
+    <main>
+        <section class="section" id="hero" data-side="left" data-word="Run">
+            <div class="inner">
+                <span class="eyebrow reveal">Concept drop · Velocity 01</span>
+                <h1 class="title split">Run the <br>city</h1>
+                <p class="lede reveal">A lightweight daily runner imagined for city miles. Foam that gives back, knit that breathes, rubber that grips wet tarmac.</p>
+                <div class="cta-row reveal d2">
+                    <a href="#shoe" class="btn btn-solid" data-scroll>Explore the shoe <span class="arrow">→</span></a>
+                    <a href="#club" class="btn btn-ghost" data-scroll>Join the drop list</a>
+                </div>
+            </div>
+            <div class="hero-meta reveal d3"><strong>248 g</strong>Men's UK 8.5<br>Scroll to rotate</div>
+        </section>
+
+        <section class="section" id="shoe" data-side="left" data-word="V01">
+            <div class="inner">
+                <span class="eyebrow reveal">Pick your colourway</span>
+                <h2 class="title split">Velocity <br>01</h2>
+                <div class="buy reveal d2">
+                    <div class="buy-row"><span class="buy-name">Velocity 01 Runner</span><span class="buy-price">Concept · not for sale</span></div>
+                    <div class="label"><span>Colourway</span><span id="cw-name"></span></div>
+                    <div class="colourways" id="colourways"></div>
+                    <div class="label"><span>Size (EU)</span><span id="size-name">Select a size</span></div>
+                    <div class="sizes" id="sizes"></div>
+                    <button class="btn btn-solid" id="notify" type="button">Notify me <span class="arrow">→</span></button>
+                    <p class="note" id="buy-note" role="status"></p>
+                </div>
+                <p class="model-credit reveal d3">3D model: <a href="https://sketchfab.com/3d-models/adidas-sneakers-10d04d34f58a4b9f862358b79230984c" target="_blank" rel="noopener">"Adidas_Sneakers"</a> by <a href="https://sketchfab.com/3dnetinfo" target="_blank" rel="noopener">3dnetinfo</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Colourways are a tint applied to the knit upper.</p>
+            </div>
+        </section>
+
+        <section class="section" id="apparel" data-side="right" data-word="Wear">
+            <div class="inner">
+                <span class="eyebrow reveal">Apparel · Archive classic</span>
+                <h2 class="title split">Track <br>jacket</h2>
+                <div class="product-card reveal d2" id="product-card">
+                    <img src="track-jacket.jpg" alt="Light blue track jacket with white stripes down the sleeves, stand-up collar and zip pockets" width="1312" height="1199" loading="lazy">
+                    <span class="product-badge">Concept</span>
+                </div>
+                <div class="product-info reveal d2"><span class="buy-name">Track Jacket · Sky Blue</span><span class="buy-price">Concept · not for sale</span></div>
+                <p class="lede reveal d3" style="margin-top:12px">Smooth tricot with a stand-up collar, full-length zip, zip hand pockets and ribbed cuffs. Pairs with the Velocity 01 in Chalk / Gum.</p>
+                <div class="apparel-sizes reveal d3" id="apparel-sizes"></div>
+                <p class="model-credit reveal d3">Also in this drop, shown in 3D: a hooded track top in black and royal blue. Move your mouse to turn it. 3D model: <a href="https://sketchfab.com/3d-models/adidas-jacket-791c9c709d2a4040b140abbaa3ae540f" target="_blank" rel="noopener">"Adidas Jacket"</a> by <a href="https://sketchfab.com/BiowireMedia" target="_blank" rel="noopener">BiowireMedia</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>
+            </div>
+        </section>
+
+        <section class="section" id="tech" data-side="right" data-word="Move">
+            <div class="inner">
+                <span class="eyebrow reveal">What's inside</span>
+                <h2 class="title split">Built <br>to move</h2>
+                <div class="features reveal d2">
+                    <div class="feature"><span class="tag">Midsole</span><div><h3>Rebound foam</h3><p>A full-length foam midsole that compresses on landing and springs back at toe-off, thicker at the heel for long runs.</p></div></div>
+                    <div class="feature"><span class="tag">Upper</span><div><h3>Engineered knit</h3><p>Zoned stretch: tighter through the midfoot for lockdown, open over the toes so heat can escape.</p></div></div>
+                    <div class="feature"><span class="tag">Outsole</span><div><h3>Street grip</h3><p>Multi-directional rubber lugs placed where the foot strikes, tuned for wet and dry pavement.</p></div></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="specs" data-side="center" data-word="Light">
+            <div class="inner">
+                <span class="eyebrow reveal">Spec sheet</span>
+                <h2 class="title split">By the <br>numbers</h2>
+                <div class="specs reveal d2">
+                    <div class="spec"><div class="v">248<small>g</small></div><div class="k">Weight, men's UK 8.5</div></div>
+                    <div class="spec"><div class="v">8<small>mm</small></div><div class="k">Heel-to-toe drop</div></div>
+                    <div class="spec"><div class="v">38<small>mm</small></div><div class="k">Stack height at the heel</div></div>
+                    <div class="spec"><div class="v">5</div><div class="k">Launch colourways</div></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="sports" data-side="center" data-word="Play">
+            <div class="inner">
+                <span class="eyebrow reveal">Shop by sport</span>
+                <h2 class="title split">Every <br>sport</h2>
+                <div class="sports reveal d2">
+                    <a href="#club" class="sport" data-scroll><span class="go">→</span><h3>Running</h3><p>Road, trail and track shoes for every pace.</p></a>
+                    <a href="#club" class="sport" data-scroll><span class="go">→</span><h3>Football</h3><p>Boots for firm ground, artificial grass and the street.</p></a>
+                    <a href="#club" class="sport" data-scroll><span class="go">→</span><h3>Training</h3><p>Stable bases for lifting, cross-training and HIIT.</p></a>
+                    <a href="#club" class="sport" data-scroll><span class="go">→</span><h3>Basketball</h3><p>Court shoes with ankle support and quick traction.</p></a>
+                    <a href="#club" class="sport" data-scroll><span class="go">→</span><h3>Outdoor</h3><p>Waterproof hikers and grippy trail runners.</p></a>
+                    <a href="#club" class="sport" data-scroll><span class="go">→</span><h3>Lifestyle</h3><p>Archive silhouettes made for everyday wear.</p></a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="club" data-side="left" data-word="Join">
+            <div class="inner">
+                <span class="eyebrow reveal">Members get it first</span>
+                <h2 class="title split">Join the <br>club</h2>
+                <p class="lede reveal">Sign up for early access to drops like this one, plus free delivery and returns.</p>
+                <form class="club-form reveal d2" id="club-form" novalidate>
+                    <label for="club-email" class="sr" hidden>Email</label>
+                    <input id="club-email" type="email" placeholder="Your email address" autocomplete="email" aria-label="Email address">
+                    <button class="btn btn-solid" type="submit">Sign up <span class="arrow">→</span></button>
+                </form>
+                <p class="note reveal d2" id="club-note" role="status"></p>
+                <ul class="perks reveal d3">
+                    <li>Early access to limited releases</li>
+                    <li>Free delivery and 30-day returns</li>
+                    <li>Birthday offer and member-only events</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-cols">
+            <div><h4>Products</h4><a href="#shoe" data-scroll>Shoes</a><a href="#apparel" data-scroll>Clothing</a><a href="#sports" data-scroll>Accessories</a><a href="#shoe" data-scroll>New arrivals</a></div>
+            <div><h4>Sports</h4><a href="#sports" data-scroll>Running</a><a href="#sports" data-scroll>Football</a><a href="#sports" data-scroll>Training</a><a href="#sports" data-scroll>Outdoor</a></div>
+            <div><h4>Concept</h4><a href="#tech" data-scroll>Technology</a><a href="#specs" data-scroll>Spec sheet</a><a href="#club" data-scroll>Membership</a></div>
+            <div><h4>Support</h4><a href="#club" data-scroll>Help</a><a href="#club" data-scroll>Returns</a><a href="#club" data-scroll>Size chart</a></div>
+        </div>
+        <div class="footer-bottom">
+            <span>Unofficial fan design concept. adidas is a trademark of adidas AG. This page is not affiliated with, sponsored or endorsed by adidas AG, and nothing on it is for sale. 3D models: sneaker by 3dnetinfo and jacket by BiowireMedia (Sketchfab), CC BY 4.0.</span>
+            <a href="#hero" data-scroll>Back to top ↑</a>
+        </div>
+    </footer>
+
+    <script type="importmap">
+    { "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+    } }
+    </script>
+
+    <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+    /* ---------- Content ---------- */
+    const COLOURWAYS = [
+        { id: 'black',  name: 'Core Black',  tint: [1, 1, 1],       upper: '#1c1c1e', accent: '#ffffff', sole: '#f2f2ef', outsole: '#141414', lace: '#e8e8e8', ui: '#ffffff' },
+        { id: 'chalk',  name: 'Chalk / Gum', tint: [3.2, 3.1, 2.9], upper: '#ecebe6', accent: '#151515', sole: '#ffffff', outsole: '#b88a5a', lace: '#ffffff', ui: '#e9dcc4' },
+        { id: 'red',    name: 'Signal Red',  tint: [3.0, 0.45, 0.45], upper: '#d3202b', accent: '#ffffff', sole: '#f4f4f1', outsole: '#151515', lace: '#ffffff', ui: '#ff3b3b' },
+        { id: 'lime',   name: 'Lime Rush',   tint: [2.4, 3.2, 0.8], upper: '#c7ef3a', accent: '#111111', sole: '#ffffff', outsole: '#1a1a1a', lace: '#111111', ui: '#d2ff3a' },
+        { id: 'blue',   name: 'Deep Blue',   tint: [0.55, 1.0, 3.2], upper: '#1e47c9', accent: '#ff6a1f', sole: '#f4f4f1', outsole: '#121212', lace: '#ffffff', ui: '#3d7bff' }
+    ];
+    const SIZES = [38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
+
+    document.getElementById('colourways').innerHTML = COLOURWAYS.map(c =>
+        `<button class="cw" type="button" data-cw="${c.id}" aria-pressed="false" aria-label="${c.name}"><i style="background:${c.upper}"></i><i style="background:${c.outsole}"></i></button>`).join('');
+    document.getElementById('sizes').innerHTML = SIZES.map(s =>
+        `<button class="size" type="button" data-size="${s}" aria-pressed="false">${s}</button>`).join('');
+
+    /* Title split */
+    document.querySelectorAll('.title.split').forEach(title => {
+        let d = 0;
+        title.innerHTML = title.innerHTML.split(/(<br\s*\/?>)/i).map(part => /^<br/i.test(part) ? part :
+            part.split(' ').filter(Boolean).map(w => `<span class="word">${[...w].map(ch => `<span class="char" style="transition-delay:${(d++) * 0.03}s">${ch}</span>`).join('')}</span>`).join(' ')
+        ).join('');
+    });
+
+    /* Sections, reveal, rail, nav */
+    const sections = [...document.querySelectorAll('.section')];
+    const rail = document.getElementById('rail');
+    rail.innerHTML = sections.map(s => `<button type="button" data-target="${s.id}" aria-label="${s.id}"><span class="dash"><span class="fill"></span></span></button>`).join('');
+    const railFills = [...rail.querySelectorAll('.fill')];
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }), { threshold: 0.15 });
+    sections.forEach(s => io.observe(s));
+    requestAnimationFrame(() => sections[0].classList.add('in'));
+
+    function scrollToId(id) {
+        const el = document.getElementById(id);
+        if (el) window.scrollTo({ top: id === 'hero' ? 0 : el.getBoundingClientRect().top + window.scrollY, behavior: 'smooth' });
+    }
+    document.querySelectorAll('[data-scroll]').forEach(a => a.addEventListener('click', e => {
+        e.preventDefault();
+        document.body.classList.remove('menu-open');
+        scrollToId(a.getAttribute('href').slice(1));
+    }));
+    rail.addEventListener('click', e => { const b = e.target.closest('button'); if (b) scrollToId(b.dataset.target); });
+    document.getElementById('menu-toggle').addEventListener('click', e => {
+        e.currentTarget.setAttribute('aria-expanded', String(document.body.classList.toggle('menu-open')));
+    });
+
+    /* Apparel: sizes + hover tilt */
+    const apparelSizes = document.getElementById('apparel-sizes');
+    apparelSizes.innerHTML = ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => `<button class="size" type="button" aria-pressed="false">${s}</button>`).join('');
+    apparelSizes.addEventListener('click', e => {
+        const b = e.target.closest('.size'); if (!b) return;
+        apparelSizes.querySelectorAll('.size').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    const card = document.getElementById('product-card');
+    card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--ry', `${((e.clientX - r.left) / r.width - 0.5) * 10}deg`);
+        card.style.setProperty('--rx', `${-((e.clientY - r.top) / r.height - 0.5) * 10}deg`);
+    });
+    card.addEventListener('mouseleave', () => { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
+
+    /* Buy box */
+    let selectedSize = null;
+    document.getElementById('sizes').addEventListener('click', e => {
+        const b = e.target.closest('.size'); if (!b) return;
+        selectedSize = b.dataset.size;
+        document.querySelectorAll('.size').forEach(s => s.setAttribute('aria-pressed', String(s === b)));
+        document.getElementById('size-name').textContent = `EU ${selectedSize}`;
+        document.getElementById('buy-note').textContent = '';
+    });
+    document.getElementById('notify').addEventListener('click', () => {
+        document.getElementById('buy-note').textContent = selectedSize
+            ? `This is a design concept, so there is nothing to notify you about. Size EU ${selectedSize} noted for the demo.`
+            : 'Select a size first.';
+    });
+    document.getElementById('club-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const v = document.getElementById('club-email').value.trim();
+        document.getElementById('club-note').textContent = /^\S+@\S+\.\S+$/.test(v)
+            ? 'Concept page only: your email was not stored or sent anywhere.'
+            : 'Enter a valid email address.';
+    });
+
+    /* =====================================================================
+       WebGL: procedural sneaker on a transparent stage
+       ===================================================================== */
+    const canvas = document.getElementById('webgl');
+    const sizes = { width: innerWidth, height: innerHeight };
+    const isMobile = () => innerWidth <= 900;
+    const clock = new THREE.Clock();
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, sizes.width / sizes.height, 0.1, 100);
+    camera.position.set(0, 0.6, 7);
+
+    // Studio lighting
+    scene.add(new THREE.HemisphereLight('#ffffff', '#202020', 1.1));
+    const key = new THREE.DirectionalLight('#ffffff', 3.2);
+    key.position.set(3, 6, 4);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.left = key.shadow.camera.bottom = -3;
+    key.shadow.camera.right = key.shadow.camera.top = 3;
+    key.shadow.bias = -0.0005;
+    scene.add(key);
+    const rim = new THREE.DirectionalLight('#cfe0ff', 2.4);
+    rim.position.set(-5, 2.5, -4);
+    scene.add(rim);
+    const fill = new THREE.DirectionalLight('#ffffff', 0.6);
+    fill.position.set(-2, -2, 4);
+    scene.add(fill);
+
+    /* ---- Shoe profile functions (u: 0 = heel, 1 = toe) ---- */
+    const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+    const LEN = 2.9;
+    const X = u => -LEN / 2 + LEN * u;
+    const W = u => Math.pow(Math.sin(Math.PI * u), 0.45) * (0.40 + 0.11 * Math.exp(-Math.pow((u - 0.68) / 0.18, 2)));
+    const H = u => Math.pow(Math.sin(Math.PI * u), 0.25) * (0.42 + 0.66 * (1 - sstep(0.28, 0.95, u)));
+    const T = u => 0.27 - 0.11 * sstep(0.2, 0.85, u);            // midsole thickness
+    const TOE = u => { const s = sstep(0.72, 1.0, u); return 0.16 * s * s; }; // toe spring
+    const surfaceY = (u, s) => T(u) + TOE(u) + H(u) * Math.pow(Math.max(s, 0), 0.35) - 0.02;
+    const uOf = x => (x + LEN / 2) / LEN;
+
+    // Knit texture (used as colour map + bump)
+    function knitTexture() {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        const g = c.getContext('2d');
+        g.fillStyle = '#e6e6e6'; g.fillRect(0, 0, 128, 128);
+        for (let y = 0; y < 128; y += 4) {
+            for (let x = 0; x < 128; x += 4) {
+                const v = 200 + ((x / 4 + y / 4) % 2) * 30 + Math.random() * 25;
+                g.fillStyle = `rgb(${v},${v},${v})`;
+                g.beginPath(); g.ellipse(x + 2, y + 2, 1.8, 1.3, 0.6, 0, Math.PI * 2); g.fill();
+            }
+        }
+        const t = new THREE.CanvasTexture(c);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+    }
+    const knit = knitTexture();
+
+    const mats = {
+        upper: new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.85, metalness: 0, map: knit, bumpMap: knit, bumpScale: 1.2, side: THREE.DoubleSide }),
+        sole: new THREE.MeshStandardMaterial({ color: '#f2f2ef', roughness: 0.6, metalness: 0 }),
+        outsole: new THREE.MeshStandardMaterial({ color: '#141414', roughness: 0.9, metalness: 0 }),
+        accent: new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.45, metalness: 0.1 }),
+        lace: new THREE.MeshStandardMaterial({ color: '#e8e8e8', roughness: 0.7 }),
+        inner: new THREE.MeshStandardMaterial({ color: '#0b0b0b', roughness: 1 })
+    };
+
+    function buildUpper() {
+        const NU = 120, NT = 48;
+        const hole = { xc: X(0.2), rx: 0.36, rz: 0.25 };
+        const pos = [], uv = [], idx = [];
+        for (let i = 0; i <= NU; i++) {
+            const u = i / NU;
+            for (let j = 0; j <= NT; j++) {
+                const th = (j / NT) * Math.PI;
+                const s = Math.sin(th);
+                pos.push(X(u), surfaceY(u, s), W(u) * Math.cos(th));
+                uv.push(u * 9, j / NT * 4);
+            }
+        }
+        const at = (i, j) => i * (NT + 1) + j;
+        for (let i = 0; i < NU; i++) {
+            for (let j = 0; j < NT; j++) {
+                const u = (i + 0.5) / NU, th = (j + 0.5) / NT * Math.PI;
+                const x = X(u), z = W(u) * Math.cos(th);
+                const inHole = ((x - hole.xc) / hole.rx) ** 2 + (z / hole.rz) ** 2 < 1 && Math.sin(th) > 0.45;
+                if (inHole) continue;
+                idx.push(at(i, j), at(i + 1, j), at(i, j + 1), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1));
+            }
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+        g.setIndex(idx);
+        g.computeVertexNormals();
+        return { geo: g, hole };
+    }
+
+    function soleGeometry(scaleW, yFn) {
+        const shape = new THREE.Shape();
+        const N = 60, pts = [];
+        for (let i = 0; i <= N; i++) { const u = i / N; pts.push([-1.52 + 3.04 * u, W(u) * scaleW + 0.035 * Math.pow(Math.sin(Math.PI * u), 0.5)]); }
+        shape.moveTo(pts[0][0], pts[0][1]);
+        pts.forEach(p => shape.lineTo(p[0], p[1]));
+        for (let i = N; i >= 0; i--) shape.lineTo(pts[i][0], -pts[i][1]);
+        const g = new THREE.ExtrudeGeometry(shape, { depth: 1, steps: 1, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.03, bevelSegments: 3 });
+        g.rotateX(-Math.PI / 2);
+        const p = g.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+            const u = Math.min(1, Math.max(0, (p.getX(i) + 1.52) / 3.04));
+            p.setY(i, yFn(u, p.getY(i)));
+        }
+        g.computeVertexNormals();
+        return g;
+    }
+
+    function tubeAlong(points, radius, closed = false) {
+        return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points, closed), points.length * 4, radius, 10, closed);
+    }
+
+    const shoe = new THREE.Group();
+    const parts = [];
+    const addMesh = (geo, mat) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; shoe.add(m); parts.push(m); return m; };
+
+    // Upper + collar opening
+    const { geo: upperGeo, hole } = buildUpper();
+    addMesh(upperGeo, mats.upper);
+    const collarPts = [];
+    for (let k = 0; k < 48; k++) {
+        const a = k / 48 * Math.PI * 2;
+        const x = hole.xc + hole.rx * Math.cos(a), z = hole.rz * Math.sin(a);
+        const u = uOf(x), w = W(u), c = Math.min(1, Math.abs(z) / w);
+        collarPts.push(new THREE.Vector3(x, surfaceY(u, Math.sqrt(1 - c * c)), z));
+    }
+    addMesh(tubeAlong(collarPts, 0.055, true), mats.upper);
+    const insole = new THREE.Mesh(new THREE.CircleGeometry(1, 40), mats.inner);
+    insole.rotation.x = -Math.PI / 2;
+    insole.scale.set(hole.rx * 0.98, hole.rz * 0.98, 1);
+    insole.position.set(hole.xc, T(0.2) + 0.06, 0);
+    shoe.add(insole);
+
+    // Midsole + outsole
+    addMesh(soleGeometry(1.12, (u, y) => TOE(u) + y * T(u)), mats.sole);
+    addMesh(soleGeometry(1.13, (u, y) => TOE(u) - 0.07 + y * 0.075), mats.outsole);
+
+    // Side accent lines and heel counter (both sides)
+    [0.55, Math.PI - 0.55].forEach(th => {
+        const pts = [];
+        for (let k = 0; k <= 30; k++) {
+            const u = 0.12 + k / 30 * 0.7;
+            const t = th + (th < 1.5 ? 1 : -1) * 0.35 * Math.sin(k / 30 * Math.PI);
+            pts.push(new THREE.Vector3(X(u), surfaceY(u, Math.sin(t)) + 0.004, W(u) * Math.cos(t) * 1.02));
+        }
+        addMesh(tubeAlong(pts, 0.022), mats.accent);
+    });
+    {
+        const pts = [];
+        for (let k = 0; k <= 24; k++) {
+            const th = 0.15 + k / 24 * (Math.PI - 0.3), u = 0.035;
+            pts.push(new THREE.Vector3(X(u) - 0.01, T(u) + H(u) * 0.55 * Math.pow(Math.sin(th), 0.35) + 0.05, W(u) * 1.25 * Math.cos(th)));
+        }
+        addMesh(tubeAlong(pts, 0.03), mats.accent);
+    }
+
+    // Laces
+    for (let k = 0; k < 6; k++) {
+        const u = 0.37 + k * 0.055;
+        const y = surfaceY(u, 1);
+        const slope = Math.atan2(surfaceY(u + 0.01, 1) - surfaceY(u - 0.01, 1), X(u + 0.01) - X(u - 0.01));
+        const lace = addMesh(new THREE.BoxGeometry(0.05, 0.03, W(u) * 1.15), mats.lace);
+        lace.position.set(X(u), y + 0.02, 0);
+        lace.rotation.z = slope;
+    }
+
+    // Center the shoe in a pivot
+    const pivot = new THREE.Group();
+    scene.add(pivot);
+    pivot.add(shoe);
+    const box = new THREE.Box3().setFromObject(shoe);
+    const center = box.getCenter(new THREE.Vector3());
+    shoe.position.sub(center);
+
+    /* ---- Real sneaker model replaces the procedural stand-in once loaded ----
+       Model: "Adidas_Sneakers" by 3dnetinfo on Sketchfab, CC BY 4.0 */
+    let realShoe = null;
+    const upperMats = new Set();
+    const shoeTint = new THREE.Color(1, 1, 1);
+    const SHOE_YAW = 0;   // rotate so the toe points to +x, like the stand-in
+    new GLTFLoader().load('sneaker.glb', gltf => {
+        const model = gltf.scene;
+        model.rotation.y = SHOE_YAW;
+        model.traverse(c => {
+            if (!c.isMesh) return;
+            c.castShadow = true;
+            c.receiveShadow = true;
+            const m = c.material;
+            if (m.map) m.map.anisotropy = 8;
+            if (m.name === 'Material_40') upperMats.add(m);   // the knit upper
+        });
+        const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+        model.scale.setScalar(3.1 / Math.max(size.x, size.y, size.z));
+        model.updateMatrixWorld(true);
+        model.position.sub(new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()));
+        realShoe = model;
+        pivot.add(model);
+        shoe.visible = false;
+    }, undefined, err => console.warn('Sneaker model unavailable, keeping the stand-in:', err));
+
+    // Contact shadow
+    const shadowTex = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 128;
+        const g = c.getContext('2d');
+        const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        gr.addColorStop(0, 'rgba(0,0,0,0.75)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+        return new THREE.CanvasTexture(c);
+    })();
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(4, 1.6), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = -1.05;
+    scene.add(shadow);
+
+    /* ---- 3D track jacket (swaps in for the shoe in the Apparel section) ----
+       Model: "Adidas Jacket" by BiowireMedia on Sketchfab, CC BY 4.0 */
+    const jacketPivot = new THREE.Group();
+    jacketPivot.visible = false;
+    scene.add(jacketPivot);
+    let jacketReady = false, blend = 0;
+    new GLTFLoader().load('jacket.glb', gltf => {
+        const model = gltf.scene;
+        model.traverse(c => {
+            if (!c.isMesh) return;
+            c.castShadow = true;
+            c.receiveShadow = true;
+            const m = c.material;
+            if (m.transparent) { m.depthWrite = true; c.castShadow = false; }
+            if (m.map) m.map.anisotropy = 8;
+            // Near-black fabric reads as a flat silhouette on the dark stage: lift it to charcoal
+            if (m.color && !m.map && m.color.r < 0.03 && m.color.g < 0.03 && m.color.b < 0.03) { m.color.setScalar(0.02); m.roughness = 0.7; m.metalness = 0; }
+        });
+        const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+        model.scale.setScalar(3.0 / Math.max(size.x, size.y, size.z));
+        model.updateMatrixWorld(true);
+        model.position.sub(new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()));
+        jacketPivot.add(model);
+        jacketReady = true;
+    }, undefined, err => console.warn('Jacket model unavailable, keeping the shoe:', err));
+
+    /* ---- Speed lines ---- */
+    const LINES = 260;
+    const lineData = [];
+    const linePos = new Float32Array(LINES * 6);
+    for (let i = 0; i < LINES; i++) {
+        lineData.push({ x: (Math.random() - 0.5) * 14, y: (Math.random() - 0.5) * 6, z: (Math.random() - 0.5) * 8, v: 1.2 + Math.random() * 3.2, len: 0.15 + Math.random() * 0.5 });
+    }
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+    const lineMat = new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false });
+    scene.add(new THREE.LineSegments(lineGeo, lineMat));
+
+    /* ---- Colourway switching ---- */
+    const targets = {};
+    const root = document.documentElement;
+    function setColourway(id) {
+        const c = COLOURWAYS.find(x => x.id === id);
+        ['upper', 'sole', 'outsole', 'accent', 'lace'].forEach(k => targets[k] = new THREE.Color(c[k]));
+        targets.line = new THREE.Color(c.ui);
+        shoeTint.setRGB(...c.tint);
+        root.style.setProperty('--accent', c.ui);
+        document.getElementById('cw-name').textContent = c.name;
+        document.querySelectorAll('.cw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cw === id)));
+    }
+    document.getElementById('colourways').addEventListener('click', e => { const b = e.target.closest('.cw'); if (b) setColourway(b.dataset.cw); });
+    setColourway('black');
+    Object.keys(targets).forEach(k => k === 'line' ? lineMat.color.copy(targets[k]) : mats[k].color.copy(targets[k]));
+
+    /* ---- Input ---- */
+    let mouseX = 0, mouseY = 0, tmx = 0, tmy = 0;
+    let cx = innerWidth / 2, cy = innerHeight / 2, ox = cx, oy = cy;
+    const ci = document.querySelector('.cursor-inner'), co = document.querySelector('.cursor-outer');
+    addEventListener('mousemove', e => {
+        if (!document.body.classList.contains('has-pointer')) { document.body.classList.add('has-pointer'); ox = e.clientX; oy = e.clientY; }
+        cx = e.clientX; cy = e.clientY;
+        ci.style.left = cx + 'px'; ci.style.top = cy + 'px';
+        tmx = cx / innerWidth * 2 - 1; tmy = cy / innerHeight * 2 - 1;
+    });
+    document.addEventListener('mouseover', e => document.body.classList.toggle('hovering', !!e.target.closest('a, button, input')));
+    addEventListener('resize', () => {
+        sizes.width = innerWidth; sizes.height = innerHeight;
+        camera.aspect = sizes.width / sizes.height; camera.updateProjectionMatrix();
+        renderer.setSize(sizes.width, sizes.height);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    });
+
+    /* ---- Scroll UI ---- */
+    const SIDE = { left: -1, right: 1, center: 0 };
+    const bigWord = document.getElementById('big-word');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const header = document.getElementById('header');
+    let active = 0, side = -1, targetSide = -1, word = 'Run', wordTimer;
+
+    function updateScrollUI() {
+        const mid = innerHeight * 0.5;
+        sections.forEach((s, i) => {
+            const r = s.getBoundingClientRect();
+            if (r.top <= mid && r.bottom > mid) active = i;
+            railFills[i].style.height = Math.max(0, Math.min(1, (mid - r.top) / r.height)) * 100 + '%';
+        });
+        const sec = sections[active];
+        targetSide = isMobile() ? 0 : SIDE[sec.dataset.side];
+        navLinks.forEach(a => a.classList.toggle('current', a.getAttribute('href') === '#' + sec.id));
+        header.classList.toggle('scrolled', scrollY > 30);
+        if (sec.dataset.word !== word) {
+            word = sec.dataset.word;
+            bigWord.classList.add('swap');
+            clearTimeout(wordTimer);
+            wordTimer = setTimeout(() => { bigWord.textContent = word; bigWord.classList.remove('swap'); }, 350);
+        }
+    }
+
+    /* ---- Loop ---- */
+    let scrollS = 0;
+    const camTarget = new THREE.Vector3();
+    const look = new THREE.Vector3(0, -0.1, 0);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.1), t = clock.getElapsedTime();
+        const max = document.documentElement.scrollHeight - innerHeight;
+        const target = max > 0 ? scrollY / max : 0;
+        scrollS += (target - scrollS) * 0.05;
+        const vel = Math.abs(target - scrollS);
+
+        mouseX += (tmx - mouseX) * 0.06; mouseY += (tmy - mouseY) * 0.06;
+        ox += (cx - ox) * 0.2; oy += (cy - oy) * 0.2;
+        co.style.left = ox + 'px'; co.style.top = oy + 'px';
+
+        // Colour easing
+        ['upper', 'sole', 'outsole', 'accent', 'lace'].forEach(k => mats[k].color.lerp(targets[k], 0.08));
+        lineMat.color.lerp(targets.line, 0.08);
+        upperMats.forEach(m => m.color.lerp(shoeTint, 0.08));
+
+        // Swap shoe <-> jacket for the Apparel section
+        const wantJacket = jacketReady && sections[active].id === 'apparel';
+        blend += ((wantJacket ? 1 : 0) - blend) * 0.07;
+        const e = blend * blend * (3 - 2 * blend);
+        pivot.scale.setScalar(Math.max(0.0001, 1 - e));
+        pivot.visible = e < 0.99;
+        jacketPivot.scale.setScalar(Math.max(0.0001, e));
+        jacketPivot.visible = e > 0.01;
+        jacketPivot.position.y = Math.sin(t * 1.1) * 0.05 + 0.05;
+        jacketPivot.rotation.set(mouseY * 0.1, Math.atan2(camera.position.x, camera.position.z) + mouseX * 0.45 + Math.sin(t * 0.5) * 0.12, 0);
+        renderer.toneMappingExposure = 1.15 + e * 0.3;
+
+        // Shoe float + tilt
+        pivot.position.y = Math.sin(t * 1.2) * 0.06;
+        pivot.rotation.set(mouseY * 0.12, mouseX * 0.3, 0.06 + Math.sin(t * 0.8) * 0.02);
+        shadow.scale.setScalar(1 - Math.sin(t * 1.2) * 0.05);
+
+        // Speed lines, faster while scrolling
+        const speed = 1 + vel * 60;
+        for (let i = 0; i < LINES; i++) {
+            const d = lineData[i];
+            d.x -= d.v * dt * speed;
+            if (d.x < -7) { d.x = 7; d.y = (Math.random() - 0.5) * 6; d.z = (Math.random() - 0.5) * 8; }
+            const L = d.len * (1 + vel * 25);
+            linePos.set([d.x, d.y, d.z, d.x + L, d.y, d.z], i * 6);
+        }
+        lineGeo.attributes.position.needsUpdate = true;
+        lineMat.opacity = 0.22 + Math.min(0.4, vel * 8);
+
+        // Camera orbit driven by scroll
+        const phi = scrollS * Math.PI * 2;
+        const lift = Math.sin(scrollS * Math.PI);
+        const fit = 4.4 / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect); // keep the whole shoe in frame
+        const radius = Math.max(6.4, fit) - lift * 1.0;
+        camTarget.set(Math.sin(phi) * radius, 0.5 + lift * 1.6, Math.cos(phi) * radius);
+        camera.position.lerp(camTarget, 0.06);
+        camera.lookAt(look);
+
+        updateScrollUI();
+        side += (targetSide - side) * 0.05;
+        camera.setViewOffset(sizes.width, sizes.height, side * sizes.width * 0.2, isMobile() ? sizes.height * 0.16 : 0, sizes.width, sizes.height);
+        root.style.setProperty('--glow-x', `${50 - side * 20}%`);
+
+        renderer.render(scene, camera);
+    }
+    animate();
+    </script>
+</body>
+</html>
