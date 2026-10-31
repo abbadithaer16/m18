@@ -185,6 +185,23 @@ main { position: relative; z-index: 10; }
 .feature h3 { font-family: var(--display); font-weight: 800; font-size: 28px; text-transform: uppercase; color: #fff; line-height: 1; margin-bottom: 8px; }
 .feature p { font-size: 15px; line-height: 1.55; }
 
+/* Apparel */
+#apparel .inner { width: min(620px, 100%); }
+.product-card {
+    position: relative; background: #c2c2c3; overflow: hidden; margin-top: 6px;
+    aspect-ratio: 1312 / 1199; max-width: 100%;
+    transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.5s var(--ease);
+    box-shadow: 10px 10px 0 var(--accent);
+}
+.product-card img { display: block; width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 0.8s var(--ease); }
+.product-card:hover img { transform: scale(1.08); }
+.product-badge { position: absolute; top: 14px; left: 14px; background: #000; color: #fff; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 5px 10px; }
+.product-info { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 16px; margin-top: 26px; }
+.product-info .buy-name { font-size: 30px; }
+.apparel-sizes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+.apparel-sizes .size { width: 54px; }
+
 /* Specs */
 #specs .inner { width: min(1100px, 100%); }
 .specs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 44px; border-top: 2px solid #fff; text-align: left; }
@@ -271,6 +288,7 @@ footer {
         <a href="#hero" class="wordmark" data-scroll aria-label="Back to top">adidas</a>
         <nav class="header-nav" aria-label="Main">
             <a href="#shoe" class="nav-link" data-scroll>The shoe</a>
+            <a href="#apparel" class="nav-link" data-scroll>Apparel</a>
             <a href="#tech" class="nav-link" data-scroll>Tech</a>
             <a href="#sports" class="nav-link" data-scroll>Sports</a>
             <a href="#club" class="nav-link" data-scroll>Club</a>
@@ -313,6 +331,20 @@ footer {
                     <button class="btn btn-solid" id="notify" type="button">Notify me <span class="arrow">→</span></button>
                     <p class="note" id="buy-note" role="status"></p>
                 </div>
+            </div>
+        </section>
+
+        <section class="section" id="apparel" data-side="right" data-word="Wear">
+            <div class="inner">
+                <span class="eyebrow reveal">Apparel · Archive classic</span>
+                <h2 class="title split">Track <br>jacket</h2>
+                <div class="product-card reveal d2" id="product-card">
+                    <img src="track-jacket.jpg" alt="Light blue track jacket with white stripes down the sleeves, stand-up collar and zip pockets" width="1312" height="1199" loading="lazy">
+                    <span class="product-badge">Concept</span>
+                </div>
+                <div class="product-info reveal d2"><span class="buy-name">Track Jacket · Sky Blue</span><span class="buy-price">Concept · not for sale</span></div>
+                <p class="lede reveal d3" style="margin-top:12px">Smooth tricot with a stand-up collar, full-length zip, zip hand pockets and ribbed cuffs. Pairs with the Velocity 01 in Chalk / Gum.</p>
+                <div class="apparel-sizes reveal d3" id="apparel-sizes"></div>
             </div>
         </section>
 
@@ -378,7 +410,7 @@ footer {
 
     <footer>
         <div class="footer-cols">
-            <div><h4>Products</h4><a href="#shoe" data-scroll>Shoes</a><a href="#sports" data-scroll>Clothing</a><a href="#sports" data-scroll>Accessories</a><a href="#shoe" data-scroll>New arrivals</a></div>
+            <div><h4>Products</h4><a href="#shoe" data-scroll>Shoes</a><a href="#apparel" data-scroll>Clothing</a><a href="#sports" data-scroll>Accessories</a><a href="#shoe" data-scroll>New arrivals</a></div>
             <div><h4>Sports</h4><a href="#sports" data-scroll>Running</a><a href="#sports" data-scroll>Football</a><a href="#sports" data-scroll>Training</a><a href="#sports" data-scroll>Outdoor</a></div>
             <div><h4>Concept</h4><a href="#tech" data-scroll>Technology</a><a href="#specs" data-scroll>Spec sheet</a><a href="#club" data-scroll>Membership</a></div>
             <div><h4>Support</h4><a href="#club" data-scroll>Help</a><a href="#club" data-scroll>Returns</a><a href="#club" data-scroll>Size chart</a></div>
@@ -441,6 +473,21 @@ footer {
     document.getElementById('menu-toggle').addEventListener('click', e => {
         e.currentTarget.setAttribute('aria-expanded', String(document.body.classList.toggle('menu-open')));
     });
+
+    /* Apparel: sizes + hover tilt */
+    const apparelSizes = document.getElementById('apparel-sizes');
+    apparelSizes.innerHTML = ['XS', 'S', 'M', 'L', 'XL', 'XXL'].map(s => `<button class="size" type="button" aria-pressed="false">${s}</button>`).join('');
+    apparelSizes.addEventListener('click', e => {
+        const b = e.target.closest('.size'); if (!b) return;
+        apparelSizes.querySelectorAll('.size').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    });
+    const card = document.getElementById('product-card');
+    card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--ry', `${((e.clientX - r.left) / r.width - 0.5) * 10}deg`);
+        card.style.setProperty('--rx', `${-((e.clientY - r.top) / r.height - 0.5) * 10}deg`);
+    });
+    card.addEventListener('mouseleave', () => { card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg'); });
 
     /* Buy box */
     let selectedSize = null;
