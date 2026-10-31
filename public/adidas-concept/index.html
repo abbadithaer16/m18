@@ -186,7 +186,9 @@ main { position: relative; z-index: 10; }
 .feature p { font-size: 15px; line-height: 1.55; }
 
 /* Apparel */
-#apparel .inner { width: min(620px, 100%); }
+#apparel .inner { width: min(520px, 100%); }
+.model-credit { margin-top: 14px; font-size: 12px; color: var(--muted); }
+.model-credit a { text-decoration: underline; }
 .product-card {
     position: relative; background: #c2c2c3; overflow: hidden; margin-top: 6px;
     aspect-ratio: 1312 / 1199; max-width: 100%;
@@ -345,6 +347,7 @@ footer {
                 <div class="product-info reveal d2"><span class="buy-name">Track Jacket · Sky Blue</span><span class="buy-price">Concept · not for sale</span></div>
                 <p class="lede reveal d3" style="margin-top:12px">Smooth tricot with a stand-up collar, full-length zip, zip hand pockets and ribbed cuffs. Pairs with the Velocity 01 in Chalk / Gum.</p>
                 <div class="apparel-sizes reveal d3" id="apparel-sizes"></div>
+                <p class="model-credit reveal d3">Also in this drop, shown in 3D: a hooded track top in black and royal blue. Move your mouse to turn it. 3D model: <a href="https://sketchfab.com/3d-models/adidas-jacket-791c9c709d2a4040b140abbaa3ae540f" target="_blank" rel="noopener">"Adidas Jacket"</a> by <a href="https://sketchfab.com/BiowireMedia" target="_blank" rel="noopener">BiowireMedia</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>
             </div>
         </section>
 
@@ -416,17 +419,21 @@ footer {
             <div><h4>Support</h4><a href="#club" data-scroll>Help</a><a href="#club" data-scroll>Returns</a><a href="#club" data-scroll>Size chart</a></div>
         </div>
         <div class="footer-bottom">
-            <span>Unofficial fan design concept. adidas is a trademark of adidas AG. This page is not affiliated with, sponsored or endorsed by adidas AG, and nothing on it is for sale.</span>
+            <span>Unofficial fan design concept. adidas is a trademark of adidas AG. This page is not affiliated with, sponsored or endorsed by adidas AG, and nothing on it is for sale. Jacket 3D model by BiowireMedia (Sketchfab), CC BY 4.0.</span>
             <a href="#hero" data-scroll>Back to top ↑</a>
         </div>
     </footer>
 
     <script type="importmap">
-    { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    { "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+    } }
     </script>
 
     <script type="module">
     import * as THREE from 'three';
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
     /* ---------- Content ---------- */
     const COLOURWAYS = [
@@ -717,6 +724,32 @@ footer {
     shadow.position.y = -1.05;
     scene.add(shadow);
 
+    /* ---- 3D track jacket (swaps in for the shoe in the Apparel section) ----
+       Model: "Adidas Jacket" by BiowireMedia on Sketchfab, CC BY 4.0 */
+    const jacketPivot = new THREE.Group();
+    jacketPivot.visible = false;
+    scene.add(jacketPivot);
+    let jacketReady = false, blend = 0;
+    new GLTFLoader().load('jacket.glb', gltf => {
+        const model = gltf.scene;
+        model.traverse(c => {
+            if (!c.isMesh) return;
+            c.castShadow = true;
+            c.receiveShadow = true;
+            const m = c.material;
+            if (m.transparent) { m.depthWrite = true; c.castShadow = false; }
+            if (m.map) m.map.anisotropy = 8;
+            // Near-black fabric reads as a flat silhouette on the dark stage: lift it to charcoal
+            if (m.color && !m.map && m.color.r < 0.03 && m.color.g < 0.03 && m.color.b < 0.03) { m.color.setScalar(0.02); m.roughness = 0.7; m.metalness = 0; }
+        });
+        const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+        model.scale.setScalar(3.0 / Math.max(size.x, size.y, size.z));
+        model.updateMatrixWorld(true);
+        model.position.sub(new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()));
+        jacketPivot.add(model);
+        jacketReady = true;
+    }, undefined, err => console.warn('Jacket model unavailable, keeping the shoe:', err));
+
     /* ---- Speed lines ---- */
     const LINES = 260;
     const lineData = [];
@@ -808,6 +841,18 @@ footer {
         // Colour easing
         ['upper', 'sole', 'outsole', 'accent', 'lace'].forEach(k => mats[k].color.lerp(targets[k], 0.08));
         lineMat.color.lerp(targets.line, 0.08);
+
+        // Swap shoe <-> jacket for the Apparel section
+        const wantJacket = jacketReady && sections[active].id === 'apparel';
+        blend += ((wantJacket ? 1 : 0) - blend) * 0.07;
+        const e = blend * blend * (3 - 2 * blend);
+        pivot.scale.setScalar(Math.max(0.0001, 1 - e));
+        pivot.visible = e < 0.99;
+        jacketPivot.scale.setScalar(Math.max(0.0001, e));
+        jacketPivot.visible = e > 0.01;
+        jacketPivot.position.y = Math.sin(t * 1.1) * 0.05 + 0.05;
+        jacketPivot.rotation.set(mouseY * 0.1, Math.atan2(camera.position.x, camera.position.z) + mouseX * 0.45 + Math.sin(t * 0.5) * 0.12, 0);
+        renderer.toneMappingExposure = 1.15 + e * 0.3;
 
         // Shoe float + tilt
         pivot.position.y = Math.sin(t * 1.2) * 0.06;
