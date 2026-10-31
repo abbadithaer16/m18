@@ -333,6 +333,7 @@ footer {
                     <button class="btn btn-solid" id="notify" type="button">Notify me <span class="arrow">→</span></button>
                     <p class="note" id="buy-note" role="status"></p>
                 </div>
+                <p class="model-credit reveal d3">3D model: <a href="https://sketchfab.com/3d-models/adidas-sneakers-10d04d34f58a4b9f862358b79230984c" target="_blank" rel="noopener">"Adidas_Sneakers"</a> by <a href="https://sketchfab.com/3dnetinfo" target="_blank" rel="noopener">3dnetinfo</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Colourways are a tint applied to the knit upper.</p>
             </div>
         </section>
 
@@ -419,7 +420,7 @@ footer {
             <div><h4>Support</h4><a href="#club" data-scroll>Help</a><a href="#club" data-scroll>Returns</a><a href="#club" data-scroll>Size chart</a></div>
         </div>
         <div class="footer-bottom">
-            <span>Unofficial fan design concept. adidas is a trademark of adidas AG. This page is not affiliated with, sponsored or endorsed by adidas AG, and nothing on it is for sale. Jacket 3D model by BiowireMedia (Sketchfab), CC BY 4.0.</span>
+            <span>Unofficial fan design concept. adidas is a trademark of adidas AG. This page is not affiliated with, sponsored or endorsed by adidas AG, and nothing on it is for sale. 3D models: sneaker by 3dnetinfo and jacket by BiowireMedia (Sketchfab), CC BY 4.0.</span>
             <a href="#hero" data-scroll>Back to top ↑</a>
         </div>
     </footer>
@@ -437,11 +438,11 @@ footer {
 
     /* ---------- Content ---------- */
     const COLOURWAYS = [
-        { id: 'black',  name: 'Core Black',  upper: '#1c1c1e', accent: '#ffffff', sole: '#f2f2ef', outsole: '#141414', lace: '#e8e8e8', ui: '#ffffff' },
-        { id: 'chalk',  name: 'Chalk / Gum', upper: '#ecebe6', accent: '#151515', sole: '#ffffff', outsole: '#b88a5a', lace: '#ffffff', ui: '#e9dcc4' },
-        { id: 'red',    name: 'Signal Red',  upper: '#d3202b', accent: '#ffffff', sole: '#f4f4f1', outsole: '#151515', lace: '#ffffff', ui: '#ff3b3b' },
-        { id: 'lime',   name: 'Lime Rush',   upper: '#c7ef3a', accent: '#111111', sole: '#ffffff', outsole: '#1a1a1a', lace: '#111111', ui: '#d2ff3a' },
-        { id: 'blue',   name: 'Deep Blue',   upper: '#1e47c9', accent: '#ff6a1f', sole: '#f4f4f1', outsole: '#121212', lace: '#ffffff', ui: '#3d7bff' }
+        { id: 'black',  name: 'Core Black',  tint: [1, 1, 1],       upper: '#1c1c1e', accent: '#ffffff', sole: '#f2f2ef', outsole: '#141414', lace: '#e8e8e8', ui: '#ffffff' },
+        { id: 'chalk',  name: 'Chalk / Gum', tint: [3.2, 3.1, 2.9], upper: '#ecebe6', accent: '#151515', sole: '#ffffff', outsole: '#b88a5a', lace: '#ffffff', ui: '#e9dcc4' },
+        { id: 'red',    name: 'Signal Red',  tint: [3.0, 0.45, 0.45], upper: '#d3202b', accent: '#ffffff', sole: '#f4f4f1', outsole: '#151515', lace: '#ffffff', ui: '#ff3b3b' },
+        { id: 'lime',   name: 'Lime Rush',   tint: [2.4, 3.2, 0.8], upper: '#c7ef3a', accent: '#111111', sole: '#ffffff', outsole: '#1a1a1a', lace: '#111111', ui: '#d2ff3a' },
+        { id: 'blue',   name: 'Deep Blue',   tint: [0.55, 1.0, 3.2], upper: '#1e47c9', accent: '#ff6a1f', sole: '#f4f4f1', outsole: '#121212', lace: '#ffffff', ui: '#3d7bff' }
     ];
     const SIZES = [38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
 
@@ -710,6 +711,32 @@ footer {
     const center = box.getCenter(new THREE.Vector3());
     shoe.position.sub(center);
 
+    /* ---- Real sneaker model replaces the procedural stand-in once loaded ----
+       Model: "Adidas_Sneakers" by 3dnetinfo on Sketchfab, CC BY 4.0 */
+    let realShoe = null;
+    const upperMats = new Set();
+    const shoeTint = new THREE.Color(1, 1, 1);
+    const SHOE_YAW = 0;   // rotate so the toe points to +x, like the stand-in
+    new GLTFLoader().load('sneaker.glb', gltf => {
+        const model = gltf.scene;
+        model.rotation.y = SHOE_YAW;
+        model.traverse(c => {
+            if (!c.isMesh) return;
+            c.castShadow = true;
+            c.receiveShadow = true;
+            const m = c.material;
+            if (m.map) m.map.anisotropy = 8;
+            if (m.name === 'Material_40') upperMats.add(m);   // the knit upper
+        });
+        const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+        model.scale.setScalar(3.1 / Math.max(size.x, size.y, size.z));
+        model.updateMatrixWorld(true);
+        model.position.sub(new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()));
+        realShoe = model;
+        pivot.add(model);
+        shoe.visible = false;
+    }, undefined, err => console.warn('Sneaker model unavailable, keeping the stand-in:', err));
+
     // Contact shadow
     const shadowTex = (() => {
         const c = document.createElement('canvas'); c.width = c.height = 128;
@@ -769,6 +796,7 @@ footer {
         const c = COLOURWAYS.find(x => x.id === id);
         ['upper', 'sole', 'outsole', 'accent', 'lace'].forEach(k => targets[k] = new THREE.Color(c[k]));
         targets.line = new THREE.Color(c.ui);
+        shoeTint.setRGB(...c.tint);
         root.style.setProperty('--accent', c.ui);
         document.getElementById('cw-name').textContent = c.name;
         document.querySelectorAll('.cw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cw === id)));
@@ -841,6 +869,7 @@ footer {
         // Colour easing
         ['upper', 'sole', 'outsole', 'accent', 'lace'].forEach(k => mats[k].color.lerp(targets[k], 0.08));
         lineMat.color.lerp(targets.line, 0.08);
+        upperMats.forEach(m => m.color.lerp(shoeTint, 0.08));
 
         // Swap shoe <-> jacket for the Apparel section
         const wantJacket = jacketReady && sections[active].id === 'apparel';
