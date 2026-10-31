@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>KINETA Night Shift</title>
+<meta name="description" content="KINETA Night Shift: a concept jacket collection shown as a scroll-driven 3D film.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,500;0,700;0,800;0,900;1,900&family=Barlow:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: a cinematic collection film. Fixed WebGL stage over chapter-coloured
+   backdrops and giant kinetic type; the HUD (captions, chapter card, progress)
+   sits on top; the page itself is just tall scroll spacers. */
+:root {
+    --bg: #070707;
+    --fg: #ffffff;
+    --text: rgba(255, 255, 255, 0.72);
+    --muted: rgba(255, 255, 255, 0.45);
+    --line: rgba(255, 255, 255, 0.16);
+    --accent: #ff2a1a;            /* signal red */
+    --kinetic-fill: rgba(255, 42, 26, 0.16);
+    --kinetic-stroke: rgba(255, 70, 50, 0.32);
+    --display: 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif;
+    --body: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+    --gutter: max(16px, min(48px, 4vw));
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    color-scheme: dark;
+}
+body[data-tone="light"] {
+    --fg: #0b0b0b;
+    --text: rgba(0, 0, 0, 0.7);
+    --muted: rgba(0, 0, 0, 0.45);
+    --line: rgba(0, 0, 0, 0.15);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: var(--bg); scrollbar-width: none; }
+::-webkit-scrollbar { display: none; width: 0; }
+body { font-family: var(--body); color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+@media (pointer: fine) { body, body * { cursor: none !important; } }
+a { color: inherit; text-decoration: none; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* ---------- Loader ---------- */
+.loader { position: fixed; inset: 0; z-index: 200; background: #050505; display: flex; flex-direction: column; justify-content: flex-end; padding: var(--gutter); transition: opacity 0.9s var(--ease), visibility 0.9s; }
+.loader.done { opacity: 0; visibility: hidden; }
+.loader-num { font-family: var(--display); font-weight: 900; font-size: clamp(90px, 20vw, 280px); line-height: 0.8; color: #fff; font-variant-numeric: tabular-nums; }
+.loader-row { display: flex; justify-content: space-between; gap: 16px; margin-top: 18px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+.loader-bar { height: 2px; background: rgba(255,255,255,0.12); margin-top: 14px; }
+.loader-bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+
+/* ---------- Backdrops (one per chapter, cross-faded) ---------- */
+.bg-layer { position: fixed; inset: 0; z-index: 0; opacity: 0; transition: opacity 1.1s var(--ease); pointer-events: none; }
+.bg-layer.on { opacity: 1; }
+.bg-intro  { background: radial-gradient(70% 60% at 50% 45%, #1b1b1d, #050505 75%); }
+.bg-red    { background: radial-gradient(60% 55% at 50% 40%, #6d0b07, #2a0303 55%, #0c0000 90%); }
+.bg-black  { background: radial-gradient(65% 60% at 55% 40%, #2a2c31, #111215 60%, #060607 95%); }
+.bg-white  { background: radial-gradient(70% 70% at 50% 40%, #ffffff, #e6e8eb 60%, #c9cdd2 100%); }
+.bg-finale { background: radial-gradient(70% 60% at 50% 40%, #1d1d20, #060606 75%); }
+
+/* ---------- Kinetic type ---------- */
+.kinetic { position: fixed; inset: 0; z-index: 1; display: flex; flex-direction: column; justify-content: center; gap: 0.5vw; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 0.8s var(--ease); }
+.kinetic.on { opacity: 1; }
+.k-row { font-family: var(--display); font-weight: 900; font-size: clamp(90px, 16vw, 260px); line-height: 0.86; text-transform: uppercase; white-space: nowrap; will-change: transform; letter-spacing: -0.01em; }
+.k-row:nth-child(odd) { color: var(--kinetic-fill); }
+.k-row:nth-child(even) { color: transparent; -webkit-text-stroke: 1.5px var(--kinetic-stroke); }
+
+#webgl { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; display: block; }
+.flash { position: fixed; inset: 0; z-index: 30; background: #fff; opacity: 0; pointer-events: none; }
+.flash.go { animation: flash 0.75s var(--ease); }
+@keyframes flash { 0% { opacity: 0; } 12% { opacity: 0.92; } 100% { opacity: 0; } }
+body.glitch #webgl { animation: shake 0.35s steps(2) 1; }
+@keyframes shake { 0% { transform: translate(6px, -3px); filter: hue-rotate(20deg); } 50% { transform: translate(-5px, 2px); } 100% { transform: none; filter: none; } }
+
+/* ---------- Cursor ---------- */
+.cursor-inner, .cursor-outer { position: fixed; top: 0; left: 0; border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); z-index: 9999; }
+.cursor-inner { width: 6px; height: 6px; background: var(--fg); transition: background 0.4s; }
+.cursor-outer { width: 38px; height: 38px; border: 1.5px solid var(--fg); opacity: 0.6; z-index: 9998; display: grid; place-items: center; transition: width 0.3s, height 0.3s, background 0.3s, opacity 0.3s; }
+.cursor-outer span { font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: #000; opacity: 0; transition: opacity 0.2s; }
+body.hovering .cursor-outer { width: 60px; height: 60px; opacity: 1; }
+body.on-jacket .cursor-outer { width: 84px; height: 84px; background: #fff; opacity: 1; border-color: #fff; }
+body.on-jacket .cursor-outer span { opacity: 1; }
+body:not(.has-pointer) .cursor-inner, body:not(.has-pointer) .cursor-outer { opacity: 0; }
+@media (pointer: coarse) { .cursor-inner, .cursor-outer { display: none; } }
+
+/* ---------- Header ---------- */
+.disclaimer { position: fixed; top: 0; left: 0; right: 0; z-index: 60; height: 24px; display: flex; align-items: center; justify-content: center; padding-inline: 12px; background: #fff; color: #000; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; text-align: center; }
+.main-header {
+    position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 50; height: 72px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    color: var(--fg); transition: color 0.6s, background 0.6s;
+}
+body[data-chapter="finale"] .main-header { background: linear-gradient(to bottom, rgba(6,6,6,0.95) 60%, rgba(6,6,6,0)); }
+.brand { display: flex; align-items: center; gap: 14px; }
+.wordmark { font-family: var(--display); font-weight: 900; font-style: italic; font-size: 30px; letter-spacing: 1px; text-transform: uppercase; color: var(--fg); }
+.badge { border: 1.5px solid var(--fg); padding: 3px 6px; font-family: var(--display); font-weight: 800; font-size: 11px; line-height: 1; text-transform: uppercase; letter-spacing: 0.5px; }
+.tools { display: flex; align-items: center; gap: 18px; font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; }
+.shop-btn { border: 1.5px solid var(--fg); padding: 9px 16px; background: transparent; font-family: var(--display); font-weight: 800; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--fg); transition: background 0.25s, color 0.25s; }
+.shop-btn:hover { background: var(--fg); color: var(--bg); }
+body[data-tone="light"] .shop-btn:hover { color: #fff; }
+.sound { width: 34px; height: 34px; background: none; border: 0; display: flex; align-items: center; justify-content: center; gap: 3px; color: var(--fg); }
+.sound i { display: block; width: 2px; height: 6px; background: currentColor; }
+.sound.on i { animation: eq 0.9s ease-in-out infinite; }
+.sound.on i:nth-child(2) { animation-delay: -0.3s; } .sound.on i:nth-child(3) { animation-delay: -0.6s; } .sound.on i:nth-child(4) { animation-delay: -0.15s; }
+@keyframes eq { 0%, 100% { height: 4px; } 50% { height: 16px; } }
+@media (max-width: 640px) { .tools .lang { display: none; } .shop-btn { padding: 8px 10px; font-size: 12px; } .badge { display: none; } }
+
+/* ---------- HUD ---------- */
+.hud { position: fixed; inset: 0; z-index: 20; pointer-events: none; color: var(--fg); }
+.intro-title { position: absolute; left: 50%; bottom: 7vh; transform: translateX(-50%); text-align: center; transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); width: min(90vw, 760px); }
+.intro-title h1 { font-family: var(--display); font-weight: 900; font-style: italic; font-size: clamp(54px, 8vw, 120px); line-height: 0.85; text-transform: uppercase; color: var(--fg); letter-spacing: -0.01em; }
+.intro-title p { margin-top: 14px; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+.hide { opacity: 0 !important; transform: translate(-50%, 20px) !important; }
+
+.chapter-card {
+    position: absolute; left: max(var(--gutter), env(safe-area-inset-left, 0px)); bottom: 6vh;
+    width: min(380px, calc(100vw - 2 * var(--gutter))); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+}
+.chapter-card.off { opacity: 0; transform: translateY(24px); }
+.chapter-card .no { font-family: var(--display); font-weight: 900; font-size: 88px; line-height: 0.8; color: transparent; -webkit-text-stroke: 1.5px var(--fg); }
+.chapter-card h2 { font-family: var(--display); font-weight: 900; font-style: italic; font-size: clamp(40px, 5vw, 64px); line-height: 0.9; text-transform: uppercase; color: var(--fg); margin-top: 10px; }
+.chapter-card .meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--text); }
+.chapter-card .meta b { font-weight: 500; color: var(--fg); }
+
+.caption-wrap { position: absolute; left: 50%; top: 66%; transform: translateX(-50%); width: min(80vw, 560px); text-align: center; }
+.caption {
+    position: relative; display: inline-block; font-family: var(--display); font-weight: 800; font-size: clamp(22px, 2.6vw, 36px); line-height: 1.05;
+    text-transform: none; color: var(--accent); text-wrap: balance; opacity: 0; transition: opacity 0.4s;
+}
+.caption.show { opacity: 1; }
+.caption.show::before, .caption.show::after { content: attr(data-text); position: absolute; inset: 0; pointer-events: none; }
+.caption.show::before { color: #ff8a7a; transform: translate(3px, -2px); mix-blend-mode: screen; animation: g1 2.4s infinite steps(1); }
+.caption.show::after { color: #7affff; opacity: 0.45; transform: translate(-3px, 2px); mix-blend-mode: screen; animation: g2 3.1s infinite steps(1); }
+@keyframes g1 { 0%, 86%, 100% { clip-path: inset(0 0 0 0); transform: translate(2px, -1px); } 88% { clip-path: inset(10% 0 55% 0); transform: translate(-8px, 0); } 92% { clip-path: inset(60% 0 8% 0); transform: translate(7px, 1px); } }
+@keyframes g2 { 0%, 90%, 100% { clip-path: inset(0 0 0 0); } 93% { clip-path: inset(40% 0 30% 0); transform: translate(6px, 0); } }
+.caption.enter { animation: cap-in 0.6s steps(6) 1; }
+@keyframes cap-in { 0% { clip-path: inset(0 100% 0 0); letter-spacing: 0.2em; } 100% { clip-path: inset(0 0 0 0); letter-spacing: 0; } }
+body[data-tone="light"] .caption { color: #c4160c; }
+
+.progress { position: absolute; right: max(var(--gutter), env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 14px; pointer-events: auto; }
+.progress button { display: flex; align-items: center; gap: 10px; justify-content: flex-end; background: none; border: 0; color: var(--muted); font-family: var(--display); font-weight: 800; font-size: 12px; letter-spacing: 1.5px; transition: color 0.3s; }
+.progress button .bar { width: 2px; height: 36px; background: var(--line); position: relative; overflow: hidden; }
+.progress button .bar i { position: absolute; left: 0; right: 0; top: 0; height: 0; background: var(--fg); }
+.progress button.active { color: var(--fg); }
+.scroll-cue { position: absolute; left: 50%; bottom: 2.4vh; transform: translateX(-50%); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); transition: opacity 0.5s; }
+@media (max-width: 760px) {
+    .progress { display: none; }
+    .caption-wrap { top: 60%; }
+    .chapter-card .no { font-size: 60px; }
+}
+
+/* ---------- Scroll spacers ---------- */
+main { position: relative; z-index: 10; pointer-events: none; }
+.chapter { position: relative; }
+#intro { height: 170vh; }
+#red, #black, #white { height: 520vh; }
+#finale { min-height: 200vh; display: flex; flex-direction: column; justify-content: flex-end; }
+
+/* ---------- Finale content ---------- */
+.finale-inner {
+    pointer-events: auto; position: relative;
+    padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+    padding-block: 80px 60px;
+    background: linear-gradient(to bottom, rgba(6,6,6,0), rgba(6,6,6,0.92) 18%, #060606);
+}
+.finale-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; margin-bottom: 36px; }
+.finale-head h2 { font-family: var(--display); font-weight: 900; font-style: italic; font-size: clamp(60px, 9vw, 150px); line-height: 0.82; text-transform: uppercase; color: #fff; }
+.finale-head p { max-width: 40ch; font-size: 16px; line-height: 1.6; color: rgba(255,255,255,0.7); }
+.products { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.product { background: #111; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; text-align: left; padding: 0; color: #fff; transition: border-color 0.3s, transform 0.3s var(--ease); min-width: 0; }
+.product:hover { border-color: var(--accent); transform: translateY(-4px); }
+.product .thumb { aspect-ratio: 1; background: radial-gradient(circle at 50% 40%, #2a2a2d, #111 70%); display: grid; place-items: center; overflow: hidden; }
+.product .thumb img { width: 100%; height: 100%; object-fit: contain; }
+.product .thumb.photo { background: #c2c2c3; }
+.product .thumb.photo img { object-fit: cover; }
+.product .info { padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.product .name { font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; line-height: 1.05; }
+.product .cw { font-size: 13px; color: rgba(255,255,255,0.6); }
+.product .tag { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent); margin-top: 6px; }
+.club { margin-top: 56px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: end; border-top: 1px solid rgba(255,255,255,0.14); padding-top: 32px; }
+.club h3 { font-family: var(--display); font-weight: 900; font-style: italic; font-size: clamp(36px, 4vw, 56px); text-transform: uppercase; color: #fff; line-height: 0.9; }
+.club form { display: flex; border: 1px solid rgba(255,255,255,0.35); }
+.club input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 0 16px; height: 52px; color: #fff; font-size: 15px; }
+.club input:focus { outline: none; }
+.club button { background: #fff; color: #000; border: 0; padding: 0 22px; font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; }
+.club-note { grid-column: 2; font-size: 13px; color: var(--accent); min-height: 1.2em; }
+footer { margin-top: 56px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.45); }
+footer a { text-decoration: underline; }
+
+@media (max-width: 640px) {
+    .products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .club { grid-template-columns: minmax(0, 1fr); }
+    .club-note { grid-column: 1; }
+    .club form { flex-direction: column; }
+    .club button { height: 48px; }
+}
+
+/* ---------- Shop overlay ---------- */
+.shop {
+    position: fixed; inset: 0; z-index: 120; background: rgba(5,5,5,0.94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    overflow-y: auto; padding: 120px max(var(--gutter), env(safe-area-inset-right, 0px)) 60px max(var(--gutter), env(safe-area-inset-left, 0px));
+    opacity: 0; visibility: hidden; transition: opacity 0.45s var(--ease), visibility 0.45s;
+}
+.shop.open { opacity: 1; visibility: visible; }
+.shop-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 30px; }
+.shop-top h2 { font-family: var(--display); font-weight: 900; font-style: italic; font-size: clamp(48px, 7vw, 100px); line-height: 0.85; text-transform: uppercase; color: #fff; }
+.shop-close { background: none; border: 1.5px solid #fff; color: #fff; padding: 9px 16px; font-family: var(--display); font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+
+@media (prefers-reduced-motion: reduce) {
+    .flash.go, body.glitch #webgl, .caption.show::before, .caption.show::after, .caption.enter, .sound.on i { animation: none !important; }
+}
+</style>
+</head>
+<body data-tone="dark">
+    <div class="cursor-inner"></div>
+    <div class="cursor-outer"><span>View</span></div>
+
+    <div class="loader" id="loader" aria-hidden="true">
+        <div class="loader-num" id="loader-num">0</div>
+        <div class="loader-bar"><span id="loader-bar"></span></div>
+        <div class="loader-row"><span>Night Shift · concept collection</span><span>Loading 3D</span></div>
+    </div>
+
+    <header class="main-header">
+        <a href="#intro" class="brand" data-jump="intro" aria-label="Back to start">
+            <span class="wordmark">kineta</span>
+            <span class="badge">Night<br>Shift</span>
+        </a>
+        <div class="tools">
+            <button class="shop-btn" id="open-shop" type="button">Shop the collection</button>
+            <span class="lang">EN</span>
+            <button class="sound" id="sound" type="button" aria-label="Turn sound on" aria-pressed="false"><i></i><i></i><i></i><i></i></button>
+        </div>
+    </header>
+
+    <div class="bg-layer bg-intro on" data-bg="intro"></div>
+    <div class="bg-layer bg-red" data-bg="red"></div>
+    <div class="bg-layer bg-black" data-bg="black"></div>
+    <div class="bg-layer bg-white" data-bg="white"></div>
+    <div class="bg-layer bg-finale" data-bg="finale"></div>
+    <div class="kinetic" id="kinetic" aria-hidden="true"><div class="k-row"></div><div class="k-row"></div><div class="k-row"></div><div class="k-row"></div></div>
+    <canvas id="webgl"></canvas>
+    <div class="flash" id="flash"></div>
+
+    <div class="hud">
+        <div class="intro-title" id="intro-title">
+            <h1>Night Shift</h1>
+            <p>Choose your piece · Scroll or click a jacket</p>
+        </div>
+        <div class="chapter-card off" id="chapter-card">
+            <div class="no" id="cc-no">01</div>
+            <h2 id="cc-name">Night Bomber</h2>
+            <div class="meta"><span id="cc-cw">Signal Red / Black</span><b>Concept · not for sale</b></div>
+        </div>
+        <div class="caption-wrap"><span class="caption" id="caption" data-text=""></span></div>
+        <nav class="progress" id="progress" aria-label="Chapters"></nav>
+        <div class="scroll-cue" id="scroll-cue">Scroll</div>
+    </div>
+
+    <main>
+        <section class="chapter" id="intro"></section>
+        <section class="chapter" id="red"></section>
+        <section class="chapter" id="black"></section>
+        <section class="chapter" id="white"></section>
+        <section class="chapter" id="finale">
+            <div class="finale-inner">
+                <div class="finale-head">
+                    <h2>The <br>collection</h2>
+                    <p>Three jackets for after dark, each with its own world. Every piece here is a design concept, shown in 3D.</p>
+                </div>
+                <div class="products" id="products"></div>
+                <div class="club">
+                    <h3>Get the next drop first</h3>
+                    <form id="club-form" novalidate>
+                        <input id="club-email" type="email" placeholder="Your email address" aria-label="Email address" autocomplete="email">
+                        <button type="submit">Sign up</button>
+                    </form>
+                    <p class="club-note" id="club-note" role="status"></p>
+                </div>
+                <footer>
+                    <span>KINETA is a fictional brand created for this concept. Nothing here is for sale.<br>
+                    3D jacket model: <a href="https://sketchfab.com/3d-models/adidas-jacket-791c9c709d2a4040b140abbaa3ae540f" target="_blank" rel="noopener">original model</a> by <a href="https://sketchfab.com/BiowireMedia" target="_blank" rel="noopener">BiowireMedia</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>, recoloured with its logo decal removed.</span>
+                    <span>© KINETA concept</span>
+                </footer>
+            </div>
+        </section>
+    </main>
+
+    <div class="shop" id="shop" role="dialog" aria-modal="true" aria-label="Shop the collection">
+        <div class="shop-top"><h2>Shop the <br>collection</h2><button class="shop-close" id="close-shop" type="button">Close</button></div>
+        <div class="products" id="shop-products"></div>
+    </div>
+
+    <script type="importmap">
+    { "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+    } }
+    </script>
+
+    <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+    /* =====================================================================
+       Content
+       ===================================================================== */
+    // Jacket variants recolour the same model. Order = lineup order, left to right.
+    const JACKETS = [
+        { id: 'black', name: 'Street Track Top', cw: 'Core Black / Red', fabric: '#1d1d1f', panel: '#d1231b' },
+        { id: 'red',   name: 'Night Bomber',     cw: 'Signal Red / Black', fabric: '#a3130e', panel: '#151515' },
+        { id: 'white', name: 'Arctic Shell',     cw: 'Cloud White / Red', fabric: '#e9e9e6', panel: '#d1231b' }
+    ];
+    const CHAPTERS = {
+        red: {
+            jacket: 1, no: '01', word: 'Night shift',
+            tone: 'dark', fill: 'rgba(255,42,26,0.16)', stroke: 'rgba(255,70,50,0.35)',
+            captions: [
+                [0.16, 0.34, 'Lightweight padding for speed and warmth'],
+                [0.42, 0.6, 'Reflective panels catch every streetlight'],
+                [0.68, 0.9, 'Cut for movement, built for the cold']
+            ]
+        },
+        black: {
+            jacket: 0, no: '02', word: 'Street',
+            tone: 'dark', fill: 'rgba(255,255,255,0.07)', stroke: 'rgba(255,255,255,0.2)',
+            captions: [
+                [0.16, 0.34, 'Born from the streets'],
+                [0.42, 0.6, 'Weather-resistant fabric keeps you moving'],
+                [0.68, 0.9, 'Contrast panels that read from a block away']
+            ]
+        },
+        white: {
+            jacket: 2, no: '03', word: 'Arctic',
+            tone: 'light', fill: 'rgba(0,0,0,0.05)', stroke: 'rgba(0,0,0,0.14)',
+            captions: [
+                [0.16, 0.34, 'Clean lines. Zero noise.'],
+                [0.42, 0.6, 'Water-repellent finish shrugs off the rain'],
+                [0.68, 0.9, 'Adjustable hood for changing weather']
+            ]
+        },
+        intro:  { tone: 'dark', word: '' },
+        finale: { tone: 'dark', word: '' }
+    };
+    const ORDER = ['intro', 'red', 'black', 'white', 'finale'];
+
+    /* =====================================================================
+       DOM refs + helpers
+       ===================================================================== */
+    const $ = id => document.getElementById(id);
+    const body = document.body;
+    const sections = ORDER.map(id => $(id));
+    const clamp01 = v => Math.max(0, Math.min(1, v));
+    const smooth = t => t * t * (3 - 2 * t);
+
+    // Progress nav
+    $('progress').innerHTML = ['red', 'black', 'white'].map(id =>
+        `<button type="button" data-jump="${id}">${CHAPTERS[id].no}<span class="bar"><i></i></span></button>`).join('');
+    const progressFills = [...$('progress').querySelectorAll('i')];
+    const progressBtns = [...$('progress').querySelectorAll('button')];
+
+    function jumpTo(id) {
+        closeShop();
+        const el = $(id);
+        const top = id === 'intro' ? 0 : el.offsetTop + (id === 'finale' ? 0 : innerHeight * 0.1);
+        window.scrollTo({ top, behavior: 'smooth' });
+    }
+    document.addEventListener('click', e => {
+        const j = e.target.closest('[data-jump]');
+        if (j) { e.preventDefault(); jumpTo(j.dataset.jump); }
+    });
+
+    // Shop overlay
+    const shop = $('shop');
+    function openShop() { shop.classList.add('open'); $('close-shop').focus(); }
+    function closeShop() { shop.classList.remove('open'); }
+    $('open-shop').addEventListener('click', openShop);
+    $('close-shop').addEventListener('click', closeShop);
+    addEventListener('keydown', e => { if (e.key === 'Escape') closeShop(); });
+
+    // Products (thumbnails filled in once the 3D renders them)
+    const PRODUCTS = [
+        ...JACKETS.map((j, i) => ({ key: 'jacket' + i, name: j.name, cw: j.cw, jump: Object.keys(CHAPTERS).find(k => CHAPTERS[k].jacket === i) }))
+    ];
+    const productHTML = p => `
+        <${p.href ? `a href="${p.href}"` : `button type="button" data-jump="${p.jump}"`} class="product">
+            <span class="thumb ${p.img ? 'photo' : ''}" data-thumb="${p.key}">${p.img ? `<img src="${p.img}" alt="">` : ''}</span>
+            <span class="info"><span class="name">${p.name}</span><span class="cw">${p.cw}</span><span class="tag">${p.href ? 'See the shoe concept' : 'Concept · not for sale'}</span></span>
+        </${p.href ? 'a' : 'button'}>`;
+    $('products').innerHTML = PRODUCTS.map(productHTML).join('');
+    $('shop-products').innerHTML = PRODUCTS.map(productHTML).join('');
+
+    $('club-form').addEventListener('submit', e => {
+        e.preventDefault();
+        const ok = /^\S+@\S+\.\S+$/.test($('club-email').value.trim());
+        $('club-note').textContent = ok ? 'Concept page only: your email was not stored or sent anywhere.' : 'Enter a valid email address.';
+    });
+
+    /* =====================================================================
+       Sound: a low ambient drone, built with Web Audio, off by default
+       ===================================================================== */
+    let audio = null;
+    const DRONE = { intro: 380, red: 520, black: 300, white: 1100, finale: 420 };
+    $('sound').addEventListener('click', e => {
+        const btn = e.currentTarget;
+        if (!audio) {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const gain = ctx.createGain(); gain.gain.value = 0;
+            const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 400; filter.Q.value = 6;
+            [55, 82.4, 110.3].forEach((f, i) => {
+                const o = ctx.createOscillator(); o.type = i === 2 ? 'triangle' : 'sawtooth'; o.frequency.value = f; o.detune.value = i * 7;
+                const g = ctx.createGain(); g.gain.value = i === 2 ? 0.25 : 0.4;
+                o.connect(g).connect(filter); o.start();
+            });
+            const lfo = ctx.createOscillator(); lfo.frequency.value = 0.08;
+            const lfoGain = ctx.createGain(); lfoGain.gain.value = 120;
+            lfo.connect(lfoGain).connect(filter.frequency); lfo.start();
+            filter.connect(gain).connect(ctx.destination);
+            audio = { ctx, gain, filter, on: false };
+        }
+        audio.on = !audio.on;
+        audio.ctx.resume();
+        audio.gain.gain.setTargetAtTime(audio.on ? 0.06 : 0, audio.ctx.currentTime, 0.4);
+        btn.classList.toggle('on', audio.on);
+        btn.setAttribute('aria-pressed', String(audio.on));
+        btn.setAttribute('aria-label', audio.on ? 'Turn sound off' : 'Turn sound on');
+    });
+
+    /* =====================================================================
+       Three.js stage
+       ===================================================================== */
+    const canvas = $('webgl');
+    const sizes = { w: innerWidth, h: innerHeight };
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+    renderer.setClearColor(0x000000, 0);
+    renderer.setSize(sizes.w, sizes.h);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, sizes.w / sizes.h, 0.1, 200);
+    camera.position.set(0, 0.6, 16);
+    const lookAt = new THREE.Vector3();
+
+    // Lights (targets per chapter are lerped every frame)
+    const hemi = new THREE.HemisphereLight('#ffffff', '#111111', 0.5);
+    const key = new THREE.SpotLight('#ffffff', 60, 30, Math.PI / 5, 0.7, 1.4);
+    key.position.set(3, 8, 6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.bias = -0.0004;
+    const rimL = new THREE.DirectionalLight('#ffffff', 1.5); rimL.position.set(-6, 3, -5);
+    const rimR = new THREE.DirectionalLight('#ff2a1a', 0.6); rimR.position.set(6, 2, -4);
+    const front = new THREE.DirectionalLight('#ffffff', 0.5); front.position.set(0, 1, 8);
+    scene.add(hemi, key, key.target, rimL, rimR, front);
+
+    const LIGHTS = {
+        intro:  { hemi: ['#ffffff', 0.45], key: ['#ffffff', 55], rimL: ['#ffffff', 1.8], rimR: ['#ff2a1a', 0.8], front: 0.45, exposure: 1.1, floor: '#141416', bars: ['#ffffff', 1], tubes: 0, dust: '#ffffff' },
+        red:    { hemi: ['#ff3b2a', 0.25], key: ['#ffb0a0', 28], rimL: ['#ff1a0a', 5.0], rimR: ['#ff3b2a', 4.0], front: 0.25, exposure: 1.15, floor: '#3d0503', bars: ['#ff2a1a', 1], tubes: 1, dust: '#ff6a4a' },
+        black:  { hemi: ['#c8d4ff', 0.35], key: ['#e8eeff', 70], rimL: ['#9fb4ff', 2.6], rimR: ['#ff3b2a', 1.6], front: 0.35, exposure: 1.1, floor: '#18191c', bars: ['#ffffff', 0.15], tubes: 0, dust: '#cfd8ff' },
+        white:  { hemi: ['#ffffff', 1.5], key: ['#ffffff', 45], rimL: ['#ffffff', 1.4], rimR: ['#ffd9d4', 0.8], front: 0.8, exposure: 1.0, floor: '#d9dcdf', bars: ['#ffffff', 0], tubes: 0, dust: '#9aa0a8' },
+        finale: { hemi: ['#ffffff', 0.45], key: ['#ffffff', 55], rimL: ['#ffffff', 1.8], rimR: ['#ff2a1a', 1.0], front: 0.45, exposure: 1.1, floor: '#141416', bars: ['#ff2a1a', 0.7], tubes: 0, dust: '#ffffff' }
+    };
+
+    // Floor: soft-edged disc that fades into the CSS backdrop
+    const FLOOR_Y = -1.55;
+    const radialTex = (inner, outer) => {
+        const c = document.createElement('canvas'); c.width = c.height = 256;
+        const g = c.getContext('2d');
+        const gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+        gr.addColorStop(0, inner); gr.addColorStop(1, outer);
+        g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+        return new THREE.CanvasTexture(c);
+    };
+    const floorMat = new THREE.MeshStandardMaterial({ color: '#141416', roughness: 0.38, metalness: 0.2, transparent: true, alphaMap: radialTex('#ffffff', '#000000'), depthWrite: false });
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(16, 64), floorMat);
+    floor.rotation.x = -Math.PI / 2; floor.position.y = FLOOR_Y; floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Glow helper: additive vertical halo behind an emissive bar
+    const haloTex = (() => {
+        const c = document.createElement('canvas'); c.width = 128; c.height = 8;
+        const g = c.getContext('2d');
+        const gr = g.createLinearGradient(0, 0, 128, 0);
+        gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, 128, 8);
+        return new THREE.CanvasTexture(c);
+    })();
+    function glowBar(width, height, haloWidth) {
+        const group = new THREE.Group();
+        const core = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, toneMapped: false }));
+        const halo = new THREE.Mesh(new THREE.PlaneGeometry(haloWidth, height * 1.04), new THREE.MeshBasicMaterial({ color: '#ffffff', map: haloTex, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+        halo.position.z = -0.01;
+        group.add(halo, core);
+        group.userData = { core: core.material, halo: halo.material };
+        return group;
+    }
+
+    // Three light bars behind the lineup / hero jacket
+    const bars = new THREE.Group();
+    [[-2.0, 0.14], [-1.1, 0.36], [0, 0.8], [1.1, 0.36], [2.0, 0.14]].forEach(([x, w]) => { const b = glowBar(w, 9, w * 4 + 0.6); b.position.set(x, 2.2, -4.5); bars.add(b); });
+    scene.add(bars);
+
+    // Neon tubes for the red chapter
+    const tubes = new THREE.Group();
+    for (let i = 0; i < 18; i++) {
+        const h = 1.2 + Math.random() * 4.5;
+        const t = glowBar(0.06, h, 0.9);
+        const side = i % 2 ? 1 : -1;
+        t.position.set(side * (2.2 + Math.random() * 6), FLOOR_Y + h / 2 + Math.random() * 1.5, -1.5 - Math.random() * 6);
+        tubes.add(t);
+    }
+    tubes.children.forEach(t => { t.userData.core.color.set('#ff2a1a'); t.userData.halo.color.set('#ff2a1a'); });
+    scene.add(tubes);
+
+    // Dust motes
+    const DUST = 500;
+    const dustPos = new Float32Array(DUST * 3);
+    for (let i = 0; i < DUST; i++) dustPos.set([(Math.random() - 0.5) * 16, Math.random() * 7 - 2, (Math.random() - 0.5) * 12], i * 3);
+    const dustGeo = new THREE.BufferGeometry();
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    const dustMat = new THREE.PointsMaterial({ color: '#ffffff', size: 0.025, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, map: radialTex('#ffffff', '#000000') });
+    scene.add(new THREE.Points(dustGeo, dustMat));
+
+    // Contact shadow blob under each jacket
+    const blobTex = radialTex('rgba(0,0,0,0.7)', 'rgba(0,0,0,0)');
+
+    /* ---------- Models ---------- */
+    const manager = new THREE.LoadingManager();
+    manager.onProgress = (url, loaded, total) => {};
+    const loaderEl = $('loader');
+    const progress = { jacket: 0, sneaker: 0 };
+    function updateLoader() {
+        const p = Math.round(progress.jacket * 100);
+        $('loader-num').textContent = p;
+        $('loader-bar').style.width = p + '%';
+    }
+    let jacketsReady = false;
+    const jackets = [];      // { group, fabric:[mats], panel:[mats], base:Color, blob }
+    const LINEUP_X = [-3.3, 0, 3.3];
+    let sneaker = null;
+
+    const gltfLoader = new GLTFLoader(manager);
+    gltfLoader.load('jacket.glb', gltf => {
+        const src = gltf.scene;
+        const size = new THREE.Box3().setFromObject(src).getSize(new THREE.Vector3());
+        src.scale.setScalar(2.9 / Math.max(size.x, size.y, size.z));
+        src.updateMatrixWorld(true);
+        src.position.sub(new THREE.Box3().setFromObject(src).getCenter(new THREE.Vector3()));
+
+        JACKETS.forEach((v, i) => {
+            const model = src.clone(true);
+            const entry = { fabric: [], panel: [], all: [] };
+            model.traverse(c => {
+                if (!c.isMesh) return;
+                c.material = c.material.clone();
+                c.castShadow = !c.material.transparent;
+                c.receiveShadow = true;
+                const m = c.material;
+                if (m.transparent) m.depthWrite = true;
+                if (m.name.startsWith('FABRIC')) { m.color.set(v.fabric); m.roughness = 0.72; m.metalness = 0; entry.fabric.push(m); }
+                else if (m.name.startsWith('Material5392')) { m.color.set(v.panel); m.roughness = 0.45; m.metalness = 0.15; entry.panel.push(m); }
+                entry.all.push(m);
+                m.userData.base = m.color.clone();
+            });
+            const group = new THREE.Group();
+            group.add(model);
+            group.position.set(LINEUP_X[i], 0, 0);
+            group.userData.index = i;
+            const blob = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.4), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false }));
+            blob.rotation.x = -Math.PI / 2; blob.position.y = FLOOR_Y + 0.01;
+            scene.add(blob);
+            scene.add(group);
+            jackets.push({ ...entry, group, blob, model, scale: 1, x: LINEUP_X[i] });
+        });
+        jacketsReady = true;
+        progress.jacket = 1; updateLoader();
+        makeThumbnails();
+    }, x => { if (x.total) { progress.jacket = x.loaded / x.total; updateLoader(); } }, err => console.error('Jacket model failed to load', err));
+
+    manager.onLoad = () => setTimeout(() => loaderEl.classList.add('done'), 350);
+    manager.onError = () => setTimeout(() => loaderEl.classList.add('done'), 350);
+    setTimeout(() => loaderEl.classList.add('done'), 20000);
+
+    /* Product thumbnails: render each piece once in a small offscreen renderer */
+    let thumbsMade = { jacket: false, sneaker: false };
+    function makeThumbnails() {
+        const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        r.setSize(480, 480); r.setClearColor(0, 0);
+        r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.15;
+        const s = new THREE.Scene();
+        s.add(new THREE.HemisphereLight('#ffffff', '#222222', 1.3));
+        const d = new THREE.DirectionalLight('#ffffff', 2.4); d.position.set(3, 4, 5); s.add(d);
+        const rl = new THREE.DirectionalLight('#ff4a3a', 1.6); rl.position.set(-4, 2, -3); s.add(rl);
+        const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+        const shoot = (obj, key, dist, y = 0) => {
+            const holder = new THREE.Group(); holder.add(obj); s.add(holder);
+            cam.position.set(dist * 0.25, y + 0.3, dist); cam.lookAt(0, y, 0);
+            r.render(s, cam);
+            document.querySelectorAll(`[data-thumb="${key}"]`).forEach(el => { el.innerHTML = `<img alt="" src="${r.domElement.toDataURL('image/png')}">`; });
+            s.remove(holder);
+        };
+        if (jacketsReady && !thumbsMade.jacket) {
+            jackets.forEach((j, i) => shoot(j.model.clone(true), 'jacket' + i, 7.2));
+            thumbsMade.jacket = true;
+        }
+        r.dispose();
+    }
+
+    /* =====================================================================
+       Camera paths
+       ===================================================================== */
+    // Chapter keyframes, relative to the featured jacket at the origin
+    const PATH = [
+        { p: 0.00, pos: [0, 0.25, 8.2], look: [0, 0, 0] },
+        { p: 0.22, pos: [3.6, 0.7, 3.6], look: [0, 0.2, 0] },
+        { p: 0.48, pos: [0.8, 0.6, -6.0], look: [0, 0.2, 0] },
+        { p: 0.70, pos: [-3.4, 1.0, 2.4], look: [-0.8, 0.45, 0] },
+        { p: 0.88, pos: [1.0, 0.85, 3.0], look: [0.2, 0.5, 0] },
+        { p: 1.00, pos: [0, 0.3, 7.5], look: [0, 0, 0] }
+    ];
+    const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
+    function samplePath(p, outPos, outLook, fit) {
+        let i = 0;
+        while (i < PATH.length - 2 && p > PATH[i + 1].p) i++;
+        const a = PATH[i], b = PATH[i + 1];
+        const t = smooth(clamp01((p - a.p) / (b.p - a.p)));
+        outPos.set(...a.pos).lerp(tmpA.set(...b.pos), t);
+        outLook.set(...a.look).lerp(tmpB.set(...b.look), t);
+        outPos.sub(outLook).multiplyScalar(fit).add(outLook);
+    }
+
+    /* =====================================================================
+       Input
+       ===================================================================== */
+    let mx = 0, my = 0, tmx = 0, tmy = 0;
+    let cx = innerWidth / 2, cy = innerHeight / 2, ox = cx, oy = cy;
+    const ci = document.querySelector('.cursor-inner'), co = document.querySelector('.cursor-outer');
+    const pointer = new THREE.Vector2(-9, -9);
+    addEventListener('mousemove', e => {
+        if (!body.classList.contains('has-pointer')) { body.classList.add('has-pointer'); ox = e.clientX; oy = e.clientY; }
+        cx = e.clientX; cy = e.clientY;
+        ci.style.left = cx + 'px'; ci.style.top = cy + 'px';
+        tmx = cx / innerWidth * 2 - 1; tmy = cy / innerHeight * 2 - 1;
+        pointer.set(tmx, -tmy);
+    });
+    document.addEventListener('mouseover', e => body.classList.toggle('hovering', !!e.target.closest('a, button, input')));
+    addEventListener('resize', () => {
+        sizes.w = innerWidth; sizes.h = innerHeight;
+        camera.aspect = sizes.w / sizes.h; camera.updateProjectionMatrix();
+        renderer.setSize(sizes.w, sizes.h); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        measureKinetic();
+    });
+
+    // Click a jacket in the lineup to open its chapter
+    const raycaster = new THREE.Raycaster();
+    let hovered = -1;
+    canvas.addEventListener('click', () => {
+        if (hovered >= 0 && (current === 'intro' || current === 'finale')) {
+            jumpTo(Object.keys(CHAPTERS).find(k => CHAPTERS[k].jacket === hovered));
+        }
+    });
+
+    /* =====================================================================
+       Chapter state
+       ===================================================================== */
+    let current = 'intro';
+    const kinetic = $('kinetic');
+    const rows = [...kinetic.children];
+    let rowWidth = 1;
+    function setKineticWord(word) {
+        rows.forEach(r => r.textContent = (word + ' · ').repeat(10));
+        measureKinetic();
+    }
+    function measureKinetic() { rowWidth = rows[0].scrollWidth / 2 || 1; }
+
+    function enterChapter(id) {
+        if (id === current) return;
+        current = id;
+        const ch = CHAPTERS[id];
+        document.querySelectorAll('.bg-layer').forEach(l => l.classList.toggle('on', l.dataset.bg === id));
+        body.dataset.tone = ch.tone;
+        body.dataset.chapter = id;
+        if (ch.word) {
+            setKineticWord(ch.word);
+            document.documentElement.style.setProperty('--kinetic-fill', ch.fill);
+            document.documentElement.style.setProperty('--kinetic-stroke', ch.stroke);
+        }
+        kinetic.classList.toggle('on', !!ch.word);
+        if (ch.jacket !== undefined) {
+            $('cc-no').textContent = ch.no;
+            $('cc-name').textContent = JACKETS[ch.jacket].name;
+            $('cc-cw').textContent = JACKETS[ch.jacket].cw;
+        }
+        progressBtns.forEach(b => b.classList.toggle('active', b.dataset.jump === id));
+        if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            const f = $('flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+            body.classList.add('glitch'); setTimeout(() => body.classList.remove('glitch'), 380);
+        }
+        if (audio) audio.filter.frequency.setTargetAtTime(DRONE[id], audio.ctx.currentTime, 0.8);
+        setCaption('');
+    }
+
+    let captionText = '';
+    function setCaption(text) {
+        if (text === captionText) return;
+        captionText = text;
+        const c = $('caption');
+        c.textContent = text; c.dataset.text = text;
+        c.classList.toggle('show', !!text);
+        c.classList.remove('enter'); void c.offsetWidth;
+        if (text) c.classList.add('enter');
+    }
+
+    /* =====================================================================
+       Loop
+       ===================================================================== */
+    const clock = new THREE.Clock();
+    const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+    const tmpColor = new THREE.Color();
+    let lightState = null;
+
+    function lerpLights(target, k) {
+        hemi.color.lerp(tmpColor.set(target.hemi[0]), k); hemi.intensity += (target.hemi[1] - hemi.intensity) * k;
+        key.color.lerp(tmpColor.set(target.key[0]), k); key.intensity += (target.key[1] - key.intensity) * k;
+        rimL.color.lerp(tmpColor.set(target.rimL[0]), k); rimL.intensity += (target.rimL[1] - rimL.intensity) * k;
+        rimR.color.lerp(tmpColor.set(target.rimR[0]), k); rimR.intensity += (target.rimR[1] - rimR.intensity) * k;
+        front.intensity += (target.front - front.intensity) * k;
+        renderer.toneMappingExposure += (target.exposure - renderer.toneMappingExposure) * k;
+        floorMat.color.lerp(tmpColor.set(target.floor), k);
+        dustMat.color.lerp(tmpColor.set(target.dust), k);
+        bars.children.forEach(b => {
+            b.userData.core.color.lerp(tmpColor.set(target.bars[0]), k);
+            b.userData.halo.color.copy(b.userData.core.color);
+            b.userData.core.opacity += (target.bars[1] - b.userData.core.opacity) * k;
+            b.userData.halo.opacity = b.userData.core.opacity * 0.55;
+        });
+        tubes.children.forEach(t => {
+            t.userData.core.opacity += (target.tubes - t.userData.core.opacity) * k;
+            t.userData.halo.opacity = t.userData.core.opacity * 0.6;
+        });
+        tubes.visible = tubes.children[0].userData.core.opacity > 0.01;
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.1), t = clock.getElapsedTime();
+
+        // Which chapter holds the middle of the viewport, and how far through it are we?
+        const mid = scrollY + innerHeight * 0.5;
+        let idx = 0;
+        sections.forEach((s, i) => { if (mid >= s.offsetTop) idx = i; });
+        const id = ORDER[idx];
+        const sec = sections[idx];
+        const p = clamp01((scrollY - sec.offsetTop) / Math.max(1, sec.offsetHeight - innerHeight));
+        enterChapter(id);
+        const ch = CHAPTERS[id];
+
+        // HUD
+        $('intro-title').classList.toggle('hide', id !== 'intro' || p > 0.5);
+        $('scroll-cue').style.opacity = scrollY < 40 ? 1 : 0;
+        $('chapter-card').classList.toggle('off', !(ch.jacket !== undefined && (p < 0.16 || p > 0.92)));
+        let cap = '';
+        if (ch.captions) for (const [a, b, text] of ch.captions) if (p >= a && p <= b) cap = text;
+        setCaption(cap);
+        ['red', 'black', 'white'].forEach((cid, i) => {
+            const s = $(cid);
+            progressFills[i].style.height = clamp01((scrollY - s.offsetTop) / Math.max(1, s.offsetHeight - innerHeight)) * 100 + '%';
+        });
+
+        // Kinetic rows slide in alternating directions with scroll
+        rows.forEach((r, i) => {
+            const dir = i % 2 ? 1 : -1;
+            const off = ((scrollY * 0.35 * dir + t * 18 * dir) % rowWidth + rowWidth) % rowWidth;
+            r.style.transform = `translate3d(${-off}px,0,0)`;
+        });
+
+        // Lights + environment
+        lerpLights(LIGHTS[id], 0.045);
+
+        // Camera framing: keep everything in frame on narrow screens
+        const aspect = camera.aspect;
+        const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+        const fitChapter = Math.max(1, 1.9 / (tanHalf * aspect * 8.2));
+        const lineupDist = Math.max(11, 5.4 / (tanHalf * aspect));
+        if (ch.jacket !== undefined) {
+            samplePath(p, camPos, camLook, fitChapter);
+        } else if (id === 'intro') {
+            camPos.set(Math.sin(p * 1.2) * 1.2, 0.45 + p * 0.4, lineupDist * (1 - p * 0.18));
+            camLook.set(0, -0.1, 0);
+        } else {
+            camPos.set(Math.sin(t * 0.15) * 0.8, 1.1, lineupDist * 0.95);
+            camLook.set(0, aspect < 0.8 ? -0.6 : -0.3, 0);
+        }
+        camPos.x += mx * 0.35; camPos.y += -my * 0.2;
+        camera.position.lerp(camPos, 0.06);
+        lookAt.lerp(camLook, 0.08);
+        camera.lookAt(lookAt);
+
+        // Jackets: lineup or a single hero
+        mx += (tmx - mx) * 0.06; my += (tmy - my) * 0.06;
+        if (jacketsReady) {
+            const lineup = ch.jacket === undefined;
+            raycaster.setFromCamera(pointer, camera);
+            hovered = -1;
+            if (lineup) {
+                const hits = raycaster.intersectObjects(jackets.map(j => j.group), true);
+                if (hits.length) { let o = hits[0].object; while (o && o.userData.index === undefined) o = o.parent; hovered = o ? o.userData.index : -1; }
+            }
+            body.classList.toggle('on-jacket', hovered >= 0);
+            jackets.forEach((j, i) => {
+                const featured = ch.jacket === i;
+                const targetX = lineup ? LINEUP_X[i] : 0;
+                const targetScale = lineup ? (hovered === i ? 1.06 : 1) : (featured ? 1 : 0);
+                j.x += (targetX - j.x) * (featured ? 1 : 0.08);
+                j.scale += (targetScale - j.scale) * 0.12;
+                const g = j.group;
+                g.position.set(j.x, Math.sin(t * 1.1 + i) * 0.05, 0);
+                g.scale.setScalar(Math.max(0.0001, j.scale));
+                g.visible = j.scale > 0.01;
+                g.rotation.y = lineup ? (hovered === i ? Math.sin(t * 1.5) * 0.25 : 0) : mx * 0.25;
+                j.blob.position.x = j.x;
+                j.blob.scale.setScalar(Math.max(0.0001, j.scale));
+                // dim the others while one is hovered
+                const dim = lineup && hovered >= 0 && hovered !== i ? 0.35 : 1;
+                j.all.forEach(m => m.color.lerp(tmpColor.copy(m.userData.base).multiplyScalar(dim), 0.12));
+            });
+        }
+        // Light bars and tubes flicker subtly
+        bars.children.forEach((b, i) => { b.userData.halo.opacity *= 0.92 + 0.08 * Math.sin(t * 7 + i * 2); });
+        tubes.children.forEach((tb, i) => { if (Math.sin(t * 13 + i * 5.1) > 0.985) tb.userData.core.opacity *= 0.3; });
+
+        // Dust drifts up
+        const dp = dustGeo.attributes.position.array;
+        for (let i = 0; i < DUST; i++) {
+            dp[i * 3 + 1] += dt * (0.05 + (i % 7) * 0.01);
+            dp[i * 3] += Math.sin(t * 0.3 + i) * dt * 0.02;
+            if (dp[i * 3 + 1] > 5) dp[i * 3 + 1] = -2;
+        }
+        dustGeo.attributes.position.needsUpdate = true;
+
+        // Cursor ring
+        ox += (cx - ox) * 0.2; oy += (cy - oy) * 0.2;
+        co.style.left = ox + 'px'; co.style.top = oy + 'px';
+
+        renderer.render(scene, camera);
+    }
+    lerpLights(LIGHTS.intro, 1);
+    animate();
+    </script>
+</body>
+</html>
