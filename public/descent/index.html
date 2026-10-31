@@ -230,6 +230,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
     import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
     import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+    import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
     /* =====================================================================
        Data
@@ -336,7 +337,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     composer.addPass(bloom);
     composer.addPass(new OutputPass());
     const finish = new ShaderPass({
-        uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uVig: { value: 0.35 }, uAb: { value: 0.0015 }, uGrain: { value: 0.045 } },
+        uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uVig: { value: 0.35 }, uAb: { value: 0.0006 }, uGrain: { value: 0.03 } },
         vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
         fragmentShader: `
             uniform sampler2D tDiffuse; uniform float uTime, uVig, uAb, uGrain; varying vec2 vUv;
@@ -351,6 +352,34 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
             }`
     });
     composer.addPass(finish);
+
+    // Reflection environment: bright water overhead, darkness below
+    const envMats = [];
+    {
+        const envScene = new THREE.Scene();
+        envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), new THREE.ShaderMaterial({
+            side: THREE.BackSide,
+            vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+            fragmentShader: 'varying vec3 vD; void main(){ float h = vD.y; vec3 c = mix(vec3(0.01, 0.05, 0.08), vec3(0.45, 0.75, 0.88), smoothstep(-0.3, 0.9, h)); c += vec3(1.0) * pow(max(h, 0.0), 14.0) * 2.5; gl_FragColor = vec4(c, 1.0); }'
+        })));
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        scene.environment = pmrem.fromScene(envScene, 0.04).texture;
+        pmrem.dispose();
+    }
+    // Water volume: lighter towards the surface, darker towards the abyss
+    const volMat = new THREE.ShaderMaterial({
+        side: THREE.BackSide, depthWrite: false,
+        uniforms: { uTop: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uBot: { value: new THREE.Color() }, uSun: { value: 1 } },
+        vertexShader: 'varying vec3 vD; void main(){ vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: `uniform vec3 uTop, uMid, uBot; uniform float uSun; varying vec3 vD;
+            void main(){ float h = normalize(vD).y;
+                vec3 c = mix(uMid, uTop, smoothstep(0.0, 0.85, h));
+                c = mix(c, uBot, smoothstep(0.0, -0.75, h));
+                c += uTop * pow(max(h, 0.0), 5.0) * uSun;
+                gl_FragColor = vec4(c, 1.0); }`
+    });
+    const waterVolume = new THREE.Mesh(new THREE.SphereGeometry(350, 32, 16), volMat);
+    waterVolume.renderOrder = -1;
 
     /* =====================================================================
        Shared helpers
@@ -435,6 +464,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     const sky = new THREE.Mesh(new THREE.SphereGeometry(400, 32, 16), skyMat);
     scene.add(sky);
     shaderClock.push(skyMat);
+    scene.add(waterVolume);
 
     const waterMat = new THREE.ShaderMaterial({
         side: THREE.DoubleSide, transparent: true,
@@ -499,26 +529,6 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     headTarget.position.set(0, -4, -20);
     headlight.target = headTarget;
     scene.add(camera);
-    // Visible floodlight beams through the water
-    const beamMat = new THREE.ShaderMaterial({
-        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide,
-        uniforms: { uI: { value: 0 } },
-        vertexShader: `varying float vL; varying vec3 vN; varying vec3 vV;
-            void main(){ vL = clamp(-position.z / 34.0, 0.0, 1.0); vec4 mv = modelViewMatrix * vec4(position, 1.0);
-                vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
-        fragmentShader: `uniform float uI; varying float vL; varying vec3 vN; varying vec3 vV;
-            void main(){ float f = pow(abs(dot(vN, vV)), 1.6); float fall = pow(1.0 - vL, 1.6) * smoothstep(0.08, 0.4, vL);
-                gl_FragColor = vec4(vec3(0.72, 0.88, 1.0), f * fall * uI * 0.03); }`
-    });
-    [-1, 1].forEach(side => {
-        const g = new THREE.ConeGeometry(3.4, 34, 40, 1, true);
-        g.translate(0, -17, 0); g.rotateX(Math.PI / 2);
-        const beam = new THREE.Mesh(g, beamMat);
-        beam.position.set(side * 0.9, 0.4, 0.5);
-        beam.rotation.set(-0.16, side * -0.08, 0);
-        beam.frustumCulled = false;
-        camera.add(beam);
-    });
 
     /* =====================================================================
        Sunlight zone: god rays, fish school
@@ -547,7 +557,8 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     }
 
     const FISH = isMobile ? 220 : 380;
-    const fishMat = new THREE.MeshStandardMaterial({ color: '#cfe3ea', metalness: 0.55, roughness: 0.28 });
+    const fishMat = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.65, roughness: 0.3, side: THREE.DoubleSide });
+    envMats.push(fishMat);
     fishMat.onBeforeCompile = sh => {
         sh.uniforms.uTime = { value: 0 };
         fishMat.userData.shader = sh;
@@ -556,8 +567,31 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
             float ph = float(gl_InstanceID) * 1.37;
             transformed.z += sin(uTime * 11.0 + ph + position.x * 4.0) * 0.07 * smoothstep(0.1, -0.5, position.x);`);
     };
-    const fishGeo = new THREE.SphereGeometry(0.5, 14, 8);
-    fishGeo.scale(1, 0.34, 0.16);
+    const fishGeo = (() => {
+        const body = new THREE.SphereGeometry(0.5, 24, 14);
+        const p = body.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+            const x = p.getX(i), u = x + 0.5, rr = Math.sqrt(Math.max(0, 0.25 - x * x)) / 0.5;
+            const prof = Math.pow(Math.sin(Math.PI * Math.pow(Math.min(Math.max(u, 0), 1), 1.4)), 0.7);
+            const k = rr > 0.01 ? prof / rr : 0;
+            p.setY(i, p.getY(i) * k * 0.62); p.setZ(i, p.getZ(i) * k * 0.26);
+        }
+        const tail = new THREE.Shape();
+        tail.moveTo(-0.44, 0); tail.lineTo(-0.8, 0.27); tail.quadraticCurveTo(-0.66, 0, -0.8, -0.27); tail.closePath();
+        const dorsal = new THREE.Shape();
+        dorsal.moveTo(0.06, 0.14); dorsal.lineTo(-0.14, 0.29); dorsal.lineTo(-0.17, 0.12); dorsal.closePath();
+        const merged = mergeGeometries([body.toNonIndexed(), new THREE.ShapeGeometry(tail).toNonIndexed(), new THREE.ShapeGeometry(dorsal).toNonIndexed()]);
+        const pos = merged.attributes.position, col = new Float32Array(pos.count * 3);
+        const back = new THREE.Color('#284352'), belly = new THREE.Color('#e9eff1'), c = new THREE.Color();
+        for (let i = 0; i < pos.count; i++) {
+            const y = pos.getY(i);
+            c.copy(belly).lerp(back, THREE.MathUtils.smoothstep(y, -0.04, 0.12));
+            col.set([c.r, c.g, c.b], i * 3);
+        }
+        merged.setAttribute('color', new THREE.BufferAttribute(col, 3));
+        merged.computeVertexNormals();
+        return merged;
+    })();
     const fish = new THREE.InstancedMesh(fishGeo, fishMat, FISH);
     fish.frustumCulled = false;
     scene.add(fish);
@@ -573,7 +607,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
        ===================================================================== */
     const jellies = [];
     const bellGeo = new THREE.SphereGeometry(1, 48, 20, 0, Math.PI * 2, 0, Math.PI / 2);
-    const JELLY_COLORS = ['#ff7fd1', '#7fe7ff', '#b28bff', '#ff9f7f', '#7fffd4'];
+    const JELLY_COLORS = ['#ffc6e4', '#c4efff', '#ddd0ff', '#ffd6c8', '#cffff0'];
     for (let i = 0; i < 7; i++) {
         const col = new THREE.Color(JELLY_COLORS[i % JELLY_COLORS.length]);
         const mat = new THREE.ShaderMaterial({
@@ -597,22 +631,22 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
                 void main(){
                     float rim = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.2);
                     float bands = 0.5 + 0.5 * sin(vY * 34.0 - uTime * 2.0);
-                    float a = 0.08 + rim * 0.75 + bands * 0.06 * (1.0 - vY);
-                    gl_FragColor = vec4(uColor * (0.6 + rim * 1.8), a);
+                    float a = 0.04 + rim * 0.5 + bands * 0.05 * (1.0 - vY);
+                    gl_FragColor = vec4(uColor * (0.3 + rim * 1.05), a);
                 }`
         });
         shaderClock.push(mat);
         const bell = new THREE.Mesh(bellGeo, mat);
         const group = new THREE.Group();
         group.add(bell);
-        const lineMat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false });
+        const lineMat = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false });
         const lines = [];
-        for (let k = 0; k < 12; k++) {
+        for (let k = 0; k < 22; k++) {
             const g = new THREE.BufferGeometry();
             g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(28 * 3), 3));
             const l = new THREE.Line(g, lineMat);
             l.frustumCulled = false;
-            group.add(l); lines.push({ l, a: (k / 12) * Math.PI * 2, len: 3 + Math.random() * 4 });
+            group.add(l); lines.push({ l, a: (k / 22) * Math.PI * 2 + Math.random() * 0.2, len: k % 6 === 0 ? 2.2 + Math.random() : 4 + Math.random() * 6, arm: k % 6 === 0 });
         }
         const s = 0.7 + Math.random() * 1.1;
         group.scale.setScalar(s);
@@ -631,7 +665,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
        Midnight zone: siphonophore, anglerfish, bioluminescent touch
        ===================================================================== */
     const SIPH = 150;
-    const siph = pointCloud(SIPH, () => {}, glowPointsMaterial({ size: 0.9, color: '#6dffcf' }));
+    const siph = pointCloud(SIPH, () => {}, glowPointsMaterial({ size: 0.5, color: '#a8ecff', opacity: 0.7 }));
     shaderClock.push(siph.material);
     scene.add(siph);
     const SIPH_Y = W(1800);
@@ -659,7 +693,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         angler.add(eye);
         const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(0.9, 0.8, 0), new THREE.Vector3(1.2, 1.9, 0), new THREE.Vector3(2.0, 2.3, 0), new THREE.Vector3(2.6, 1.8, 0)]);
         angler.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 30, 0.025, 6), body.material));
-        const lure = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color('#bff9ff').multiplyScalar(2.2), toneMapped: false }));
+        const lure = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color('#bff9ff').multiplyScalar(1.6), toneMapped: false }));
         lure.position.set(2.62, 1.7, 0);
         angler.add(lure);
         const lureLight = new THREE.PointLight('#8ff1ff', 8, 9, 1.6);
@@ -685,11 +719,26 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         g.lineTo(143, 50); g.closePath(); g.fill();
         return new THREE.CanvasTexture(c);
     })();
+    const mantaBelly = (() => {
+        const c = document.createElement('canvas'); c.width = c.height = 256;
+        const g = c.getContext('2d');
+        g.fillStyle = '#e8ebea'; g.fillRect(0, 0, 256, 256);
+        const edge = g.createRadialGradient(128, 130, 30, 128, 130, 130);
+        edge.addColorStop(0, 'rgba(40,48,52,0)'); edge.addColorStop(0.7, 'rgba(40,48,52,0.15)'); edge.addColorStop(1, 'rgba(40,48,52,0.85)');
+        g.fillStyle = edge; g.fillRect(0, 0, 256, 256);
+        g.fillStyle = 'rgba(25,28,30,0.85)';
+        for (let i = 0; i < 26; i++) { g.beginPath(); g.ellipse(100 + Math.random() * 56, 110 + Math.random() * 60, 1.5 + Math.random() * 5, 1.5 + Math.random() * 4, Math.random() * 3, 0, Math.PI * 2); g.fill(); }
+        g.strokeStyle = 'rgba(60,66,70,0.6)'; g.lineWidth = 2;
+        for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo(112 - i * 1.5, 92 + i * 7); g.lineTo(119, 94 + i * 7); g.moveTo(144 + i * 1.5, 92 + i * 7); g.lineTo(137, 94 + i * 7); g.stroke(); }
+        const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+    })();
     const mantaGeo = new THREE.PlaneGeometry(9, 9, 72, 72);
     mantaGeo.rotateX(-Math.PI / 2);
-    const mantaMat = new THREE.MeshStandardMaterial({ color: '#1f2c35', roughness: 0.75, alphaMap: mantaTex, alphaTest: 0.5, side: THREE.DoubleSide });
+    const mantaMat = new THREE.MeshStandardMaterial({ color: '#1c2228', roughness: 0.6, map: mantaBelly, alphaMap: mantaTex, alphaTest: 0.5, side: THREE.DoubleSide });
+    envMats.push(mantaMat);
     mantaMat.onBeforeCompile = sh => {
         sh.uniforms.uTime = { value: 0 }; mantaMat.userData.shader = sh;
+        sh.fragmentShader = sh.fragmentShader.replace('#include <map_fragment>', `vec4 texelColor = texture2D(map, vMapUv);\n            if (!gl_FrontFacing) diffuseColor.rgb = texelColor.rgb * 0.9;`);
         sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
             float span = abs(position.x) / 4.5;
             transformed.y += sin(uTime * 0.9 - span * 1.6) * 0.75 * pow(span, 1.6) - pow(span, 2.0) * 0.25;
@@ -751,7 +800,41 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         g.computeVertexNormals();
         g.rotateZ(-Math.PI / 2);
         g.scale(1, 1.05, 0.82);
-        const skin = new THREE.MeshStandardMaterial({ color: '#4c535c', roughness: 0.78, metalness: 0.0 });
+        const skinTex = (() => {
+            const W2 = 1024, H2 = 512;
+            const c = document.createElement('canvas'); c.width = W2; c.height = H2;
+            const g = c.getContext('2d');
+            g.fillStyle = '#56575b'; g.fillRect(0, 0, W2, H2);
+            for (let i = 0; i < 1600; i++) {
+                const v = Math.random() < 0.5 ? 30 : 120;
+                g.fillStyle = `rgba(${v},${v + 2},${v + 6},${Math.random() * 0.07})`;
+                g.beginPath(); g.ellipse(Math.random() * W2, Math.random() * H2, 4 + Math.random() * 34, 3 + Math.random() * 18, Math.random() * 3, 0, Math.PI * 2); g.fill();
+            }
+            g.lineCap = 'round';
+            for (let i = 0; i < 320; i++) {   // scars from squid, mostly on the head (top of canvas)
+                const x = Math.random() * W2, y = Math.pow(Math.random(), 1.6) * H2 * 0.55;
+                g.strokeStyle = `rgba(214,210,200,${0.12 + Math.random() * 0.4})`; g.lineWidth = 0.8 + Math.random() * 2.2;
+                g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + (Math.random() - 0.5) * 60, y + (Math.random() - 0.5) * 30, x + (Math.random() - 0.5) * 120, y + (Math.random() - 0.5) * 40); g.stroke();
+            }
+            for (let i = 0; i < 40; i++) {   // sucker rings
+                const x = Math.random() * W2, y = Math.random() * H2 * 0.45;
+                for (let k = 0; k < 6; k++) { g.strokeStyle = 'rgba(220,216,206,0.35)'; g.lineWidth = 1; g.beginPath(); g.arc(x + k * 9, y + k * 3, 3 + Math.random() * 2, 0, Math.PI * 2); g.stroke(); }
+            }
+            const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
+            const b = document.createElement('canvas'); b.width = W2; b.height = H2;
+            const gb = b.getContext('2d');
+            gb.fillStyle = '#808080'; gb.fillRect(0, 0, W2, H2);
+            for (let i = 0; i < 260; i++) {   // prune-like wrinkles behind the head
+                const y = H2 * (0.35 + Math.random() * 0.65);
+                gb.strokeStyle = i % 2 ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.2)'; gb.lineWidth = 1 + Math.random() * 3;
+                gb.beginPath();
+                for (let x = 0; x <= W2; x += 16) gb.lineTo(x, y + Math.sin(x * 0.02 + i) * 6 + Math.sin(x * 0.07 + i * 3) * 2);
+                gb.stroke();
+            }
+            return { map, bump: new THREE.CanvasTexture(b) };
+        })();
+        const skin = new THREE.MeshStandardMaterial({ color: '#d2d2d2', map: skinTex.map, bumpMap: skinTex.bump, bumpScale: 3, roughness: 0.72, metalness: 0.0 });
+        envMats.push(skin);
         whale.add(new THREE.Mesh(g, skin));
         const jaw = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.32, 6.5, 10), skin);
         jaw.rotation.z = Math.PI / 2 + 0.05; jaw.position.set(5.6, -1.55, 0);
@@ -768,6 +851,11 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         pec.scale.set(1.1, 0.1, 0.45); pec.position.set(4.2, -1.3, 1.5); pec.rotation.y = 0.5;
         const pec2 = pec.clone(); pec2.position.z = -1.5; pec2.rotation.y = -0.5;
         whale.add(pec, pec2);
+        const hump = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 10), skin);
+        hump.scale.set(1.7, 0.55, 0.55); hump.position.set(-3.2, 1.35, 0); whale.add(hump);
+        [[-4.6, 1.05], [-5.6, 0.85], [-6.5, 0.66], [-7.3, 0.5]].forEach(([x, y]) => {
+            const k = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 8), skin); k.scale.set(1.2, 0.55, 0.6); k.position.set(x, y, 0); whale.add(k);
+        });
         whale.userData.flukes = flukes;
     }
     whale.scale.setScalar(1.05);
@@ -799,7 +887,27 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     /* =====================================================================
        Abyss + hadal: seafloor, vents, trench, snailfish
        ===================================================================== */
-    const rockMat = new THREE.MeshStandardMaterial({ color: '#59606a', roughness: 0.95, metalness: 0, flatShading: false });
+    function noiseTex(size, scale, c0, c1, bumpy) {
+        const c = document.createElement('canvas'); c.width = c.height = size;
+        const g = c.getContext('2d'), img = g.createImageData(size, size);
+        const a = new THREE.Color(c0), b = new THREE.Color(c1), m = new THREE.Color();
+        for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+            let n = fbm(x / scale, y / scale);
+            if (bumpy) n = n * 0.7 + Math.abs(vnoise(x / (scale * 0.18), y / (scale * 0.18)) - 0.5) * 0.6;
+            m.copy(a).lerp(b, Math.min(1, Math.max(0, n * 1.4 - 0.2)));
+            const i = (y * size + x) * 4;
+            img.data[i] = m.r * 255; img.data[i + 1] = m.g * 255; img.data[i + 2] = m.b * 255; img.data[i + 3] = 255;
+        }
+        g.putImageData(img, 0, 0);
+        const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+        return t;
+    }
+    const sedMap = noiseTex(256, 40, '#4a4438', '#8c8473', false); sedMap.colorSpace = THREE.SRGBColorSpace; sedMap.repeat.set(10, 10);
+    const sedBump = noiseTex(256, 18, '#000000', '#ffffff', true); sedBump.repeat.set(10, 10);
+    const rockMapT = noiseTex(256, 24, '#2e3134', '#6d6a63', true); rockMapT.colorSpace = THREE.SRGBColorSpace; rockMapT.repeat.set(6, 4);
+    const plainMat = new THREE.MeshStandardMaterial({ map: sedMap, bumpMap: sedBump, bumpScale: 2.5, roughness: 1 });
+    const rockMat = new THREE.MeshStandardMaterial({ map: rockMapT, bumpMap: rockMapT, bumpScale: 4, roughness: 0.95, metalness: 0 });
+    envMats.push(plainMat, rockMat);
     const PLAIN_Y = W(5800);
     function slab(sign) {
         const g = new THREE.PlaneGeometry(140, 160, 110, 110);
@@ -811,7 +919,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
             p.setY(i, fbm(x * 0.06 + sign * 10, z * 0.06) * 3.2 - edge * edge * 6);
         }
         g.computeVertexNormals();
-        const m = new THREE.Mesh(g, rockMat);
+        const m = new THREE.Mesh(g, plainMat);
         m.position.set(sign * (70 + 9), PLAIN_Y, -40);
         return m;
     }
@@ -838,14 +946,14 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         const p = g.attributes.position;
         for (let i = 0; i < p.count; i++) p.setY(i, fbm(p.getX(i) * 0.15, p.getZ(i) * 0.15) * 1.2);
         g.computeVertexNormals();
-        const floorMesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: '#3a352e', roughness: 1 }));
+        const floorMesh = new THREE.Mesh(g, plainMat);
         floorMesh.position.set(0, W(MAX_DEPTH) - 4.2, -40);
         scene.add(floorMesh);
     }
 
     // Hydrothermal vents on the left plain
     const vents = new THREE.Group();
-    const ventMat = new THREE.MeshStandardMaterial({ color: '#2b2622', roughness: 0.9, emissive: '#1a0700' });
+    const ventMat = new THREE.MeshStandardMaterial({ map: rockMapT, bumpMap: rockMapT, bumpScale: 5, color: '#8a7a68', roughness: 0.9 });
     [[-15, -10, 6], [-19, -14, 8.5], [-13, -18, 4.5]].forEach(([x, z, h]) => {
         const g = new THREE.CylinderGeometry(0.5, 1.6, h, 18, 14, true);
         const p = g.attributes.position;
@@ -857,14 +965,19 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         const c = new THREE.Mesh(g, ventMat);
         c.position.set(x, PLAIN_Y + h / 2 - 0.5, z);
         vents.add(c);
-        const glow = new THREE.PointLight('#ff6a1a', 6, 12, 1.6);
+        const glow = new THREE.PointLight('#ffb27a', 0.6, 5, 2);
         glow.position.set(x, PLAIN_Y + h, z);
         vents.add(glow);
         c.userData.top = new THREE.Vector3(x, PLAIN_Y + h - 0.5, z);
     });
     scene.add(vents);
     const PLUME = 900;
-    const plume = pointCloud(PLUME, (i, a) => a.set([0, 0, 0], i * 3), glowPointsMaterial({ size: 1.6, color: '#ff7a33', opacity: 0.22 }));
+    const plume = pointCloud(PLUME, (i, a) => a.set([0, 0, 0], i * 3), new THREE.ShaderMaterial({
+        transparent: true, depthWrite: false,
+        uniforms: { uTime: { value: 0 } },
+        vertexShader: `attribute float aScale; varying float vF; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vF = aScale; gl_PointSize = (2.0 + aScale * 9.0) * (90.0 / -mv.z); gl_Position = projectionMatrix * mv; }`,
+        fragmentShader: `varying float vF; void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(vec3(0.07, 0.07, 0.075), a * 0.32 * (1.0 - vF * 0.75)); }`
+    }));
     shaderClock.push(plume.material);
     scene.add(plume);
     const plumeData = Array.from({ length: PLUME }, (_, i) => ({ v: i % 3, t: Math.random() }));
@@ -892,7 +1005,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     // Snailfish: translucent, tails waving
     const snailGeo = new THREE.LatheGeometry([[0, -1.2], [0.25, -1.0], [0.42, -0.5], [0.4, 0.1], [0.25, 0.8], [0.08, 1.6], [0, 1.9]].map(([r, y]) => new THREE.Vector2(r, y)), 20);
     snailGeo.rotateZ(Math.PI / 2);
-    const snailMat = new THREE.MeshStandardMaterial({ color: '#e2aea6', roughness: 0.65, transparent: true, opacity: 0.72, emissive: '#140806' });
+    const snailMat = new THREE.MeshStandardMaterial({ color: '#e2aea6', roughness: 0.4, transparent: true, opacity: 0.72, emissive: '#140806' });
     snailMat.onBeforeCompile = sh => {
         sh.uniforms.uTime = { value: 0 }; snailMat.userData.shader = sh;
         sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -919,9 +1032,9 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
     const SNOW = isMobile ? 1400 : 2600;
     const snowMat = new THREE.ShaderMaterial({
         transparent: true, depthWrite: false,
-        uniforms: { uTime: { value: 0 }, uCam: { value: new THREE.Vector3() }, uOpacity: { value: 0 } },
+        uniforms: { uTime: { value: 0 }, uCam: { value: new THREE.Vector3() }, uOpacity: { value: 0 }, uBeam: { value: 0 }, uAmb: { value: 1 } },
         vertexShader: `
-            attribute float aPhase; uniform float uTime; uniform vec3 uCam; varying float vA;
+            attribute float aPhase; uniform float uTime, uBeam, uAmb; uniform vec3 uCam; varying float vA;
             void main(){
                 vec3 box = vec3(40.0, 30.0, 40.0);
                 vec3 p = position;
@@ -929,13 +1042,15 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
                 p.x += sin(uTime * 0.3 + aPhase * 20.0) * 0.6;
                 p = mod(p - uCam + box * 0.5, box) - box * 0.5 + uCam;
                 vec4 mv = modelViewMatrix * vec4(p, 1.0);
-                vA = smoothstep(30.0, 6.0, -mv.z) * smoothstep(1.5, 4.0, -mv.z);
-                gl_PointSize = min(5.0, (0.8 + aPhase * 1.4) * (26.0 / -mv.z));
+                float cone = smoothstep(0.86, 0.975, dot(normalize(mv.xyz), normalize(vec3(0.0, -0.17, -1.0))));
+                float lit = uAmb + cone * uBeam * smoothstep(38.0, 4.0, -mv.z) * 2.4;
+                vA = smoothstep(30.0, 6.0, -mv.z) * smoothstep(1.2, 3.0, -mv.z) * lit;
+                gl_PointSize = min(7.0, (0.55 + pow(aPhase, 3.0) * 3.2) * (26.0 / -mv.z));
                 gl_Position = projectionMatrix * mv;
             }`,
         fragmentShader: `
             uniform float uOpacity; varying float vA;
-            void main(){ float d = length(gl_PointCoord - 0.5); gl_FragColor = vec4(vec3(0.85, 0.92, 0.95), smoothstep(0.5, 0.1, d) * vA * uOpacity); }`
+            void main(){ float d = length(gl_PointCoord - 0.5); gl_FragColor = vec4(vec3(0.88, 0.9, 0.86), smoothstep(0.5, 0.15, d) * vA * uOpacity); }`
     });
     shaderClock.push(snowMat);
     const snow = pointCloud(SNOW, (i, a) => a.set([(Math.random() - 0.5) * 40, (Math.random() - 0.5) * 30, (Math.random() - 0.5) * 40], i * 3), snowMat);
@@ -1105,15 +1220,23 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
 
         // Environment
         sky.visible = !underwater;
+        water.visible = depth < 140;
         sky.position.copy(camera.position);
+        waterVolume.visible = underwater;
+        waterVolume.position.copy(camera.position);
         if (underwater) {
             const [fc, fd] = fogAt(depth);
             scene.fog.color.copy(fc); scene.background.copy(fc); scene.fog.density = fd;
+            volMat.uniforms.uMid.value.copy(fc);
+            volMat.uniforms.uTop.value.copy(fc).multiplyScalar(2.6);
+            volMat.uniforms.uBot.value.copy(fc).multiplyScalar(0.22);
+            volMat.uniforms.uSun.value = 1.6 * Math.exp(-depth / 70);
         } else {
             scene.fog.color.set('#7a4a3c'); scene.fog.density = 0.0008; scene.background.set('#7a4a3c');
         }
         hemi.intensity = 0.04 + 1.5 * Math.exp(-depth / 140);
-        deepRim.intensity = Math.min(1, depth / 2000) * 0.55;
+        deepRim.intensity = Math.min(1, depth / 2000) * 0.4;
+        envMats.forEach(m => { m.envMapIntensity = 0.03 + 1.1 * Math.exp(-depth / 110); });
         sun.intensity = underwater ? 2.6 * Math.exp(-depth / 90) : 2.4;
         const wantLights = depth > 950;
         if (wantLights !== lightsOn) {
@@ -1126,10 +1249,12 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
         }
         headlight.intensity += ((lightsOn ? 140 : 0) - headlight.intensity) * 0.08;
         rayMat.uniforms.uFade.value = Math.max(0, 1 - depth / 160);
-        snowMat.uniforms.uOpacity.value = Math.min(0.55, Math.max(0, (depth - 20) / 300));
+        snowMat.uniforms.uOpacity.value = Math.min(0.6, Math.max(0, (depth - 15) / 250));
         snowMat.uniforms.uCam.value.copy(camera.position);
-        bloom.strength = (underwater ? 0.5 : 0.55) + Math.min(1, depth / 1500) * 0.7;
-        bloom.threshold = !underwater ? 0.82 : depth > 600 ? 0.34 : 0.24;
+        snowMat.uniforms.uBeam.value = headlight.intensity / 140;
+        snowMat.uniforms.uAmb.value = 0.12 + 0.88 * Math.exp(-depth / 260);
+        bloom.strength = (underwater ? 0.32 : 0.5) + Math.min(1, depth / 1500) * 0.45;
+        bloom.threshold = !underwater ? 0.82 : depth > 600 ? 0.55 : 0.7;
         finish.uniforms.uVig.value = 0.3 + Math.min(1, depth / 3000) * 0.35;
 
         // Rays face the camera
@@ -1162,7 +1287,7 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
             j.group.rotation.z = Math.sin(t * 0.3 + i) * 0.15;
             j.lines.forEach(L => {
                 const arr = L.l.geometry.attributes.position.array;
-                const rr = 0.85 * (1 + 0.2 * pulse);
+                const rr = (L.arm ? 0.25 : 0.9) * (1 + 0.2 * pulse);
                 for (let k = 0; k < 28; k++) {
                     const f = k / 27;
                     arr[k * 3] = Math.cos(L.a) * rr * (1 - f * 0.4) + Math.sin(t * 1.3 + f * 6 + L.a * 2) * 0.25 * f;
@@ -1205,8 +1330,10 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
                 a[i * 3] = top.x + Math.sin(i * 12.9 + t * 0.8) * spread;
                 a[i * 3 + 1] = top.y + p.t * 16;
                 a[i * 3 + 2] = top.z + Math.cos(i * 7.3 + t * 0.7) * spread;
+                plume.geometry.attributes.aScale.array[i] = p.t;
             }
             plume.geometry.attributes.position.needsUpdate = true;
+            plume.geometry.attributes.aScale.needsUpdate = true;
             plume.visible = true;
         } else plume.visible = false;
 
@@ -1251,7 +1378,6 @@ body.flicker .hud { animation: flick 0.7s steps(2) 1; }
             whale.userData.flukes.rotation.z = Math.sin(t * 0.9) * 0.35;
         }
 
-        beamMat.uniforms.uI.value = headlight.intensity / 140;
 
         // Bioluminescent touch (below the sunlit layer)
         if (pointerMoved && depth > 180) {
