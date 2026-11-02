@@ -1,0 +1,406 @@
+/* Shelf page: tabs, 3D shelf, caption, arrows, play ring, detail sheet. */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.back {
+  color: var(--ink);
+}
+
+/* ---------- decade tabs ---------- */
+
+.tabs {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  top: calc(50% - var(--H) / 2 - 86px);
+  transform: translateX(-50%);
+  display: flex;
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  height: 23px;
+  padding: 0 11px;
+  border: 1px solid var(--rule);
+  white-space: nowrap;
+  transition: color 0.45s var(--ease);
+}
+
+.tab + .tab {
+  margin-left: -1px;
+}
+
+.tab.is-active {
+  color: #fff;
+}
+
+.tabs__ind {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 23px;
+  width: 0;
+  background: var(--cobalt);
+  transition:
+    width 0.6s var(--ease),
+    transform 0.6s var(--ease);
+}
+
+/* ---------- shelf ---------- */
+
+.shelf {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(50% - var(--H) / 2 - 40px);
+  height: calc(var(--H) + 80px);
+  perspective: 2200px;
+  perspective-origin: 50% 50%;
+  touch-action: pan-y;
+  z-index: 10;
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.tape {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.face {
+  position: absolute;
+  top: calc(var(--H) / -2);
+  height: var(--H);
+  backface-visibility: hidden;
+  border-radius: 2px;
+  background-repeat: no-repeat;
+}
+
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  opacity: var(--shade, 0);
+  pointer-events: none;
+}
+
+.sp {
+  width: var(--ws);
+  left: calc(var(--ws) / -2);
+  transform: translateZ(calc(var(--d) / 2));
+}
+
+.cv {
+  width: var(--d);
+  left: calc(var(--d) / -2);
+  transform: rotateY(90deg) translateZ(calc(var(--ws) / 2));
+  box-shadow: 0 30px 60px -28px rgba(20, 16, 10, 0.55);
+}
+
+/* ---------- play ring ---------- */
+
+.play {
+  position: fixed;
+  z-index: 25;
+  left: 0;
+  top: 0;
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  border: 1px solid var(--cobalt);
+  border-radius: 50%;
+  background: rgba(237, 235, 230, 0.75);
+  color: var(--cobalt);
+  display: grid;
+  place-items: center;
+  transform: scale(0);
+}
+
+.play svg {
+  transform: translateX(2px);
+}
+
+/* ---------- caption ---------- */
+
+.caption {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  top: calc(50% + var(--H) / 2 + 30px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  pointer-events: none;
+}
+
+.cap {
+  position: relative;
+  overflow: hidden;
+  width: min(92vw, 760px);
+  text-align: center;
+}
+
+.cap > span {
+  display: block;
+  white-space: nowrap;
+}
+
+.cap > span:not(.cap__sizer) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.cap__sizer {
+  visibility: hidden;
+}
+
+.cap--title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 31px;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.cap--sub {
+  color: var(--cobalt);
+  font-weight: 500;
+}
+
+.cap--year {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+/* ---------- arrows ---------- */
+
+.arrow {
+  position: fixed;
+  z-index: 20;
+  top: calc(50% + var(--H) / 2 + 40px);
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+
+.arrow--prev {
+  left: 20px;
+}
+
+.arrow--next {
+  right: 20px;
+}
+
+/* ---------- footer additions ---------- */
+
+.foot .social a {
+  color: var(--ink);
+}
+
+/* ---------- detail sheet ---------- */
+
+.detail {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  visibility: hidden;
+  background: var(--sheet);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  padding: 110px 6vw 56px 7vw;
+  align-items: center;
+}
+
+.detail.is-open {
+  visibility: visible;
+}
+
+.detail__close {
+  position: absolute;
+  left: 32px;
+  top: 31px;
+}
+
+.detail__band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.detail__text {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 520px;
+  justify-self: end;
+  width: 100%;
+}
+
+.d-sub {
+  color: var(--cobalt);
+}
+
+.d-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(44px, 5.4vw, 84px);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  padding-bottom: 0.08em;
+}
+
+.d-meta {
+  color: var(--muted);
+}
+
+.d-syn {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+
+.d-credit {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.d-watch {
+  height: 44px;
+  margin-top: 10px;
+  padding: 0 20px;
+  border: 1px solid var(--cobalt);
+  color: var(--cobalt);
+  display: inline-flex !important;
+  align-items: center;
+  width: max-content;
+}
+
+.d-note {
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 12px;
+  min-height: 1px;
+}
+
+.detail__poster {
+  height: min(100%, 78vh);
+  aspect-ratio: 474 / 900;
+  justify-self: start;
+}
+
+.detail__poster svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 767px) {
+  .tabs {
+    top: calc(50% - var(--H) / 2 - 70px);
+  }
+
+  .tab {
+    padding: 0 7px;
+    font-size: 9px;
+  }
+
+  .cap--title {
+    font-size: 24px;
+  }
+
+  .arrow--prev {
+    left: 6px;
+  }
+
+  .arrow--next {
+    right: 6px;
+  }
+
+  .copy__long,
+  .foot .social {
+    display: none;
+  }
+
+  .foot__nav .box {
+    padding: 0 6px;
+  }
+
+  .detail {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 24px;
+    padding: 84px 22px 40px;
+    overflow-y: auto;
+  }
+
+  .detail__close {
+    left: 16px;
+    top: 21px;
+  }
+
+  .detail__band {
+    height: 64px;
+  }
+
+  .detail__poster {
+    order: -1;
+    height: 46svh;
+    justify-self: center;
+  }
+
+  .detail__text {
+    justify-self: stretch;
+  }
+
+  .d-title {
+    font-size: 42px;
+  }
+
+  .d-syn {
+    font-size: 16px;
+  }
+}

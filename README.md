@@ -28,6 +28,17 @@ listening, spiral galaxy for thinking, brain for remembering), and the
 "Try the three states" controls drive it directly. It shares dependencies
 with AUREX but no application code. All copy and visuals are original.
 
+## Third site: Leon Vasari filmography (`/vasari/`)
+
+A plain HTML, CSS and JavaScript site (no framework, no build step) in
+`public/vasari/`, served at `/m18/vasari/`. Built from the MotionSites
+"Shelf Hero" prompt (`vasari-vhs-hero`, free tier) and extended into four
+pages: the endless 3D VHS shelf with its paper-sheet film detail, a films
+index, a biography and a retrospective programme. Leon Vasari and his films
+are fictional; every page says so. The tape artwork is cropped from four
+MotionSites image sheets loaded from their image proxy, as the prompt
+specifies.
+
 ## Project structure
 
 ```

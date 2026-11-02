@@ -1,0 +1,333 @@
+/* Leon Vasari — shared styles (all pages). Fictional director; design study
+   built from the MotionSites "Shelf Hero" prompt. */
+
+:root {
+  --paper: #edebe6;
+  --sheet: #f4f2ed;
+  --ink: #141414;
+  --muted: #6d6a63;
+  --cobalt: #1f3fb0;
+  --rule: rgba(20, 20, 20, 0.9);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --H: min(46vh, 31vw);
+  --sans: 'Inter Tight', 'Noto Sans JP', system-ui, sans-serif;
+  --serif: 'Newsreader', Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--serif);
+  user-select: none;
+}
+
+body.locked {
+  overflow: hidden;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+p,
+ol,
+ul,
+dl,
+dd {
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 3px;
+}
+
+@media (pointer: fine) {
+  html,
+  body,
+  button,
+  a {
+    cursor: none;
+  }
+}
+
+/* ---------- labels ---------- */
+
+.lbl {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 10.5px;
+  line-height: 1;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.box {
+  display: inline-flex;
+  align-items: center;
+  height: 21px;
+  padding: 0 8px;
+  border: 1px solid var(--rule);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* ---------- paper grain ---------- */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45  0 0 0 0 .42  0 0 0 0 .38  0 0 0 .22 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- top bar ---------- */
+
+.topbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 30;
+  height: 84px;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+
+.topbar > :first-child {
+  justify-self: start;
+}
+
+.topbar > :last-child {
+  justify-self: end;
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  color: var(--cobalt);
+  text-decoration: none;
+}
+
+.logo__cjk {
+  font-family: 'Noto Serif SC', serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.logo__latin {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.34em;
+  padding-left: 0.34em;
+  line-height: 1;
+}
+
+/* ---------- footer ---------- */
+
+.foot {
+  position: fixed;
+  left: 32px;
+  right: 32px;
+  bottom: 26px;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.foot a {
+  text-decoration: none;
+}
+
+.foot__nav {
+  display: flex;
+}
+
+.foot__nav .box + .box {
+  margin-left: -1px;
+}
+
+.foot__nav .box[aria-current='page'] {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+  color: #fff;
+}
+
+/* Page-flow pages (films, biography, retrospective) use a static footer. */
+.foot--flow {
+  position: static;
+  margin: 0 32px;
+  padding: 40px 0 26px;
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------- cursor ---------- */
+
+.cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  pointer-events: none;
+  display: none;
+}
+
+@media (pointer: fine) {
+  .cursor {
+    display: block;
+  }
+}
+
+.cursor__ring {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  transition:
+    transform 0.5s var(--ease),
+    background-color 0.4s var(--ease),
+    border-color 0.4s var(--ease);
+}
+
+.cursor__dot {
+  position: absolute;
+  left: 26px;
+  top: 26px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition: transform 0.4s var(--ease);
+}
+
+.cursor__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 1.25;
+  letter-spacing: 0.1em;
+  color: #fff;
+  transform: scale(0);
+  transition: transform 0.45s var(--ease);
+}
+
+.cursor.spine .cursor__ring {
+  transform: scale(0.72);
+}
+
+.cursor.btn .cursor__ring {
+  transform: scale(0.55);
+}
+
+.cursor.btn .cursor__dot {
+  transform: scale(0);
+}
+
+.cursor.open .cursor__ring {
+  transform: scale(1.75);
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+}
+
+.cursor.open .cursor__dot {
+  transform: scale(0);
+}
+
+.cursor.open .cursor__label {
+  transform: scale(1);
+}
+
+/* ---------- masked text lines ---------- */
+
+.mask {
+  display: block;
+  overflow: hidden;
+}
+
+.mask > * {
+  display: block;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 767px) {
+  :root {
+    --H: min(60vw, 40svh);
+  }
+
+  .topbar {
+    height: 64px;
+    padding: 0 16px;
+  }
+
+  .logo__cjk {
+    font-size: 17px;
+  }
+
+  .logo__latin {
+    font-size: 7.5px;
+  }
+
+  .lbl {
+    font-size: 9px;
+  }
+
+  .topbar .career {
+    display: none;
+  }
+
+  .foot {
+    left: 16px;
+    right: 16px;
+    bottom: 18px;
+  }
+
+  .foot--flow {
+    margin: 0 16px;
+    flex-wrap: wrap;
+  }
+}
