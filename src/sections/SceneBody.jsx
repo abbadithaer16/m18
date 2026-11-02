@@ -18,9 +18,7 @@ export default function SceneBody() {
     headlight: BODY_END.headlight,
     taillight: BODY_END.taillight,
     textRef,
-    textFadeInEnd: 0.22,
-    textFadeOutStart: 0.45,
-    textFadeOutEnd: 0.6,
+    textReveal: 'viewport',
   })
 
   return (

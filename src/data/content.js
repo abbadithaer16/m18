@@ -57,7 +57,11 @@ export const STATS = [
 ]
 
 export const BODY_COLORS = [
-  { id: 'obsidian', name: 'Obsidian Black', hex: '#0a0a0b', metalness: 0.9, roughness: 0.32 },
+  // Obsidian is a gloss-black *dielectric* paint. As a metal (0.9) its
+  // reflectance would be its own near-black base colour (~0.3%), removing the
+  // ~4% Fresnel reflection every real black finish has and leaving only the
+  // clearcoat to show the shape. Hex and roughness unchanged.
+  { id: 'obsidian', name: 'Obsidian Black', hex: '#0a0a0b', metalness: 0.15, roughness: 0.32 },
   { id: 'titanium', name: 'Titanium Silver', hex: '#c7c8ca', metalness: 0.95, roughness: 0.28 },
   { id: 'aurex-red', name: 'Aurex Red', hex: '#6e0f16', metalness: 0.75, roughness: 0.3 },
   { id: 'arctic', name: 'Arctic White', hex: '#eef0ee', metalness: 0.6, roughness: 0.3 },

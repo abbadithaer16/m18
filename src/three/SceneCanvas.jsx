@@ -15,7 +15,10 @@ export default function SceneCanvas({ bodyColor, wheelOption, interiorColor, isM
 
   return (
     <Canvas
-      shadows={!isMobile}
+      // R3F maps `shadows={true}` to PCFSoftShadowMap, which three r182+
+      // removed (it warns and falls back). PCFShadowMap is the supported,
+      // already-soft filter, so request it explicitly.
+      shadows={isMobile ? false : { enabled: true, type: THREE.PCFShadowMap }}
       dpr={[1, dprCap]}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       camera={{

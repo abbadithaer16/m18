@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import Studio from './Studio'
+import Studio, { FOG_NEAR, FOG_FAR } from './Studio'
 import Vehicle from './Vehicle'
 import { sceneState, dragState, pointerState } from '../state/sceneState'
 import { damp } from './maths'
@@ -24,7 +24,7 @@ export default function Experience({ bodyColor, wheelOption, interiorColor, high
     return () => window.removeEventListener('pointermove', onMove)
   }, [])
 
-  useFrame((_, rawDt) => {
+  useFrame(({ scene }, rawDt) => {
     const dt = Math.min(rawDt, 1 / 30)
 
     // Inertial decay once the user has released the drag.
@@ -50,6 +50,14 @@ export default function Experience({ bodyColor, wheelOption, interiorColor, high
     // point proportionally so the full car still fits horizontally.
     const aspect = size.width / size.height
     const frameScale = aspect < 1.1 ? THREE.MathUtils.clamp(1.15 / aspect, 1, 2.4) : 1
+    // The fog range (Studio: near 9, far 26) is tuned for the landscape
+    // camera distances. Pulling the camera back by up to 2.4× on portrait
+    // phones put the car ~22 units away — ~75% fogged to near-black. Scale
+    // the fog with the same factor so the car's fog density matches desktop.
+    if (scene.fog) {
+      scene.fog.near = FOG_NEAR * frameScale
+      scene.fog.far = FOG_FAR * frameScale
+    }
     framedPosition.current.set(
       camState.lx + (camState.x - camState.lx) * frameScale,
       camState.ly + (camState.y - camState.ly) * frameScale,
