@@ -18,8 +18,8 @@ export default function SceneWheels() {
     headlight: WHEELS_END.headlight,
     taillight: WHEELS_END.taillight,
     texts: [
-      { ref: textRef, textFadeInEnd: 0.16, textFadeOutStart: 0.42, textFadeOutEnd: 0.58 },
-      { ref: calloutsRef, textFadeInEnd: 0.3, textFadeOutStart: 0.48, textFadeOutEnd: 0.6 },
+      { ref: textRef, reveal: 'viewport' },
+      { ref: calloutsRef, reveal: 'viewport' },
     ],
   })
 

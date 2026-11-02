@@ -17,9 +17,7 @@ export default function SceneInterior() {
     headlight: INTERIOR_END.headlight,
     taillight: INTERIOR_END.taillight,
     textRef,
-    textFadeInEnd: 0.25,
-    textFadeOutStart: 0.58,
-    textFadeOutEnd: 0.74,
+    textReveal: 'viewport',
   })
 
   return (

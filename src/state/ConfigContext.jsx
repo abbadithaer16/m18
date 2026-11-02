@@ -1,10 +1,10 @@
 import { createContext, useContext, useMemo, useState } from 'react'
-import { BODY_COLORS, INTERIOR_COLORS, WHEEL_OPTIONS } from '../data/content'
+import { BODY_COLORS, DEFAULT_BODY_COLOR_ID, INTERIOR_COLORS, WHEEL_OPTIONS } from '../data/content'
 
 const ConfigContext = createContext(null)
 
 export function ConfigProvider({ children }) {
-  const [bodyColorId, setBodyColorId] = useState(BODY_COLORS[0].id)
+  const [bodyColorId, setBodyColorId] = useState(DEFAULT_BODY_COLOR_ID)
   const [wheelId, setWheelId] = useState(WHEEL_OPTIONS[0].id)
   const [interiorId, setInteriorId] = useState(INTERIOR_COLORS[0].id)
 

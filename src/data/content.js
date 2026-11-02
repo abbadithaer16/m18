@@ -57,11 +57,19 @@ export const STATS = [
 ]
 
 export const BODY_COLORS = [
-  { id: 'obsidian', name: 'Obsidian Black', hex: '#0a0a0b', metalness: 0.9, roughness: 0.32 },
+  // Obsidian is a gloss-black *dielectric* paint. As a metal (0.9) its
+  // reflectance would be its own near-black base colour (~0.3%), removing the
+  // ~4% Fresnel reflection every real black finish has and leaving only the
+  // clearcoat to show the shape. Hex and roughness unchanged.
+  { id: 'obsidian', name: 'Obsidian Black', hex: '#0a0a0b', metalness: 0.15, roughness: 0.32 },
   { id: 'titanium', name: 'Titanium Silver', hex: '#c7c8ca', metalness: 0.95, roughness: 0.28 },
   { id: 'aurex-red', name: 'Aurex Red', hex: '#6e0f16', metalness: 0.75, roughness: 0.3 },
   { id: 'arctic', name: 'Arctic White', hex: '#eef0ee', metalness: 0.6, roughness: 0.3 },
 ]
+
+// The DeLorean's body is brushed stainless; the swatch colour tints that
+// texture, so the silver swatch is the car's natural finish and the default.
+export const DEFAULT_BODY_COLOR_ID = 'titanium'
 
 export const WHEEL_OPTIONS = [
   { id: 'forged-01', name: 'Option 01', spokes: 5, style: 'blade' },
@@ -92,4 +100,16 @@ export const FINAL = {
 export const BRAND = {
   name: 'AUREX',
   location: 'AMMAN / JORDAN',
+}
+
+// The 3D vehicle is adapted from a CC BY-NC-SA 4.0 asset: credit must stay
+// visible (footer), use must be non-commercial, and the adapted model is
+// shared under the same licence.
+export const MODEL_CREDIT = {
+  title: '1985 DeLorean DMC-12 Time Machine (BTTF)',
+  author: 'VTX',
+  sourceUrl: 'https://sketchfab.com/3d-models/1985-delorean-dmc-12-time-machine-bttf-6fdfe2e2adba4886b48cc523871e88be',
+  license: 'CC BY-NC-SA 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  changes: 'Modified: geometry simplified and compressed, textures resized, materials adapted. Non-commercial use only.',
 }

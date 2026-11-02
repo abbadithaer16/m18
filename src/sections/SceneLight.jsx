@@ -17,9 +17,7 @@ export default function SceneLight() {
     headlight: LIGHT_END.headlight,
     taillight: LIGHT_END.taillight,
     textRef,
-    textFadeInEnd: 0.3,
-    textFadeOutStart: 0.55,
-    textFadeOutEnd: 0.7,
+    textReveal: 'viewport',
   })
 
   return (

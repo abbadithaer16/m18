@@ -17,10 +17,8 @@ export default function FinalCTA() {
     light: FINAL_END.light,
     headlight: FINAL_END.headlight,
     taillight: FINAL_END.taillight,
-    textRef,
-    textFadeInEnd: 0.3,
-    textFadeOutStart: 1,
-    textFadeOutEnd: 1,
+    // Last block on the page: once revealed it stays, never fades out.
+    texts: [{ ref: textRef, reveal: 'viewport', fadeOut: false }],
   })
 
   return (
