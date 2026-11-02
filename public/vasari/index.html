@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#edebe6" />
+    <meta name="description" content="The filmography of Leon Vasari, a fictional film director: twelve films from 1958 to 1989 on an endless shelf of VHS tapes." />
+    <title>Leon Vasari — Filmography</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&amp;display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&amp;display=swap&amp;text=%E3%80%9C%E3%81%84%E3%81%8B%E3%81%8F%E3%81%98%E3%81%99%E3%81%9F%E3%81%A1%E3%81%A6%E3%81%AA%E3%81%AE%E3%81%B9%E3%82%8B%E3%82%92%E4%B8%8A%E4%BA%89%E4%BD%9C%E5%88%BB%E5%8D%88%E5%93%81%E5%A1%A9%E5%A4%8F%E5%AF%9F%E5%B5%90%E5%B7%9D%E5%B9%B4%E5%BE%8C%E6%88%A6%E6%88%BB%E6%89%89%E6%98%82%E6%98%A0%E6%9C%80%E6%AD%A3%E6%AD%B4%E6%BD%AE%E7%81%AF%E7%81%B0%E7%89%B9%E7%93%A6%E7%94%BB%E7%9B%A3%E7%9D%A3%E7%B5%8C%E7%B7%91%E8%80%85%E8%8E%B1%E8%90%A8%E8%90%BD%E8%A6%8B%E8%A6%B3%E8%B0%B7%E8%B5%A4%E9%81%93%E9%87%8C%E9%95%B7%E9%96%89%E9%96%8B%E9%9B%86%E9%9D%92%E9%9D%99%E9%B3%A5" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&amp;display=swap&amp;text=%E8%8E%B1%E6%98%82%C2%B7%E7%93%A6%E8%90%A8%E9%87%8C" />
+    <link rel="stylesheet" href="./assets/vasari.css" />
+    <link rel="stylesheet" href="./assets/shelf.css" />
+    <script type="module" src="./assets/shelf.js"></script>
+  </head>
+  <body class="locked">
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="page" id="page">
+      <header class="topbar">
+        <a class="lbl box back" href="../">Back / 戻る</a>
+        <a class="logo" href="./" aria-label="Leon Vasari, filmography">
+          <span class="logo__cjk">莱昂·瓦萨里</span>
+          <span class="logo__latin">LEON VASARI</span>
+        </a>
+        <span class="lbl career">Career 1958年〜1989年</span>
+      </header>
+
+      <nav class="tabs" aria-label="Decades">
+        <span class="tabs__ind" aria-hidden="true"></span>
+        <button class="lbl tab" type="button" data-decade="all">All / すべて</button>
+        <button class="lbl tab" type="button" data-decade="1950">1950s</button>
+        <button class="lbl tab" type="button" data-decade="1960">1960s</button>
+        <button class="lbl tab" type="button" data-decade="1970">1970s</button>
+        <button class="lbl tab" type="button" data-decade="1980">1980s</button>
+      </nav>
+
+      <section class="shelf" aria-label="Filmography shelf">
+        <div class="stage" id="stage"></div>
+      </section>
+
+      <button class="play" type="button" aria-label="Open film">
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 0.5 L11 6 L2 11.5 Z" fill="currentColor" /></svg>
+      </button>
+
+      <div class="caption" aria-hidden="true">
+        <div class="cap cap--title"><span class="cap__sizer">Ag</span></div>
+        <div class="cap cap--sub lbl"><span class="cap__sizer">Ag</span></div>
+        <div class="cap cap--year"><span class="cap__sizer">Ag</span></div>
+      </div>
+      <p class="sr-only" id="announce" aria-live="polite"></p>
+
+      <button class="arrow arrow--prev" type="button" aria-label="Previous film">
+        <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true"><path d="M5 1 L1 5 L5 9 M1 5 H17" fill="none" stroke="currentColor" stroke-width="1.2" /></svg>
+      </button>
+      <button class="arrow arrow--next" type="button" aria-label="Next film">
+        <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true"><path d="M13 1 L17 5 L13 9 M17 5 H1" fill="none" stroke="currentColor" stroke-width="1.2" /></svg>
+      </button>
+
+      <footer class="foot">
+        <span class="lbl copy">© Leon Vasari. <span class="copy__long">All rights reserved.</span></span>
+        <nav class="foot__nav" aria-label="Site">
+          <a class="lbl box" href="./" aria-current="page">Shelf</a>
+          <a class="lbl box" href="./films.html">Films / 作品</a>
+          <a class="lbl box" href="./biography.html">Biography</a>
+          <a class="lbl box" href="./retrospective.html">Retrospective</a>
+        </nav>
+        <span class="lbl social"><a href="#" aria-label="Facebook (fictional, no account)">FB</a> / <a href="#" aria-label="Twitter (fictional, no account)">TW</a></span>
+      </footer>
+    </div>
+
+    <div class="detail" id="detail" role="dialog" aria-modal="true" aria-labelledby="d-title">
+      <button class="lbl box detail__close" type="button">Close / 閉じる</button>
+      <div class="detail__band">
+        <span class="logo">
+          <span class="logo__cjk">莱昂·瓦萨里</span>
+          <span class="logo__latin">LEON VASARI</span>
+        </span>
+      </div>
+      <div class="detail__text">
+        <span class="mask"><span class="lbl d-sub" id="d-sub"></span></span>
+        <span class="mask"><h2 class="d-title" id="d-title"></h2></span>
+        <span class="mask"><span class="lbl d-meta" id="d-meta"></span></span>
+        <span class="mask"><p class="d-syn" id="d-syn"></p></span>
+        <span class="mask"><p class="d-credit">Written and directed by Leon Vasari. 監督作品</p></span>
+        <span class="mask"><button class="lbl d-watch" type="button" id="d-watch">Watch the film / 映画を見る</button></span>
+        <span class="mask"><span class="lbl d-note" id="d-note" aria-live="polite"></span></span>
+      </div>
+      <div class="detail__poster">
+        <svg viewBox="0 0 474 900" aria-hidden="true">
+          <defs>
+            <filter id="ink" filterUnits="userSpaceOnUse" x="-200" y="-200" width="874" height="1300">
+              <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="3" seed="7" result="noise" />
+              <feDisplacementMap in="SourceGraphic" in2="noise" scale="120" xChannelSelector="R" yChannelSelector="G" />
+            </filter>
+            <mask id="inkmask" maskUnits="userSpaceOnUse" x="-200" y="-200" width="874" height="1300">
+              <g filter="url(#ink)" id="blobs">
+                <circle cx="150" cy="330" r="0" fill="#fff" data-delay="0" />
+                <circle cx="340" cy="600" r="0" fill="#fff" data-delay="120" />
+                <circle cx="250" cy="120" r="0" fill="#fff" data-delay="220" />
+                <circle cx="90" cy="760" r="0" fill="#fff" data-delay="300" />
+                <circle cx="400" cy="250" r="0" fill="#fff" data-delay="360" />
+                <circle cx="260" cy="860" r="0" fill="#fff" data-delay="420" />
+                <circle cx="230" cy="470" r="0" fill="#fff" data-delay="180" />
+              </g>
+            </mask>
+            <clipPath id="pclip"><rect width="474" height="900" /></clipPath>
+          </defs>
+          <g clip-path="url(#pclip)" mask="url(#inkmask)">
+            <image id="d-image" preserveAspectRatio="none" />
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="cursor" aria-hidden="true">
+      <span class="cursor__ring"></span>
+      <span class="cursor__dot"></span>
+      <span class="cursor__label"><span>OPEN</span><span>開く</span></span>
+    </div>
+  </body>
+</html>
