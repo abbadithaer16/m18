@@ -19,6 +19,15 @@ npm run build     # production build → dist/
 npm run preview   # serve the production build locally
 ```
 
+## Second page: NOEMA concept (`/noema/`)
+
+A separate, self-contained concept site for a fictional AI voice interface,
+served at `/m18/noema/` (entry `noema/index.html`, code in `src-noema/`). A
+GLSL particle field morphs between three states as you scroll (orb for
+listening, spiral galaxy for thinking, brain for remembering), and the
+"Try the three states" controls drive it directly. It shares dependencies
+with AUREX but no application code. All copy and visuals are original.
+
 ## Project structure
 
 ```
