@@ -1,4 +1,5 @@
-// Copy for the NOEMA concept page. Original text; NOEMA is fictional.
+// Copy for the NOEMA concept page. Original text. NOEMA is a fictional
+// portfolio concept: answers describe how the concept is meant to behave.
 
 export const DEMO_LINES = {
   listening: {
@@ -41,14 +42,14 @@ export const FAQ = [
   },
   {
     q: 'What happens for people who prefer reduced motion?',
-    a: 'The field stops drifting and breathing, and changes state with a short fade instead of a flight.',
+    a: 'The field holds still: no drifting, breathing or twinkle, and it changes state in a single step instead of flying between shapes.',
   },
   {
     q: 'Does it work without voice?',
     a: 'Yes. The same three states can follow typed input, sensors or any signal your product already has.',
   },
   {
-    q: 'How do we get access?',
-    a: 'Email the team with a line about your product. We reply to every request within a week.',
+    q: 'Can I actually use NOEMA?',
+    a: 'No. NOEMA is a fictional product made as a portfolio concept. The page shows how such an interface could look and behave; there is nothing to sign up for.',
   },
 ]

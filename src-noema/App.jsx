@@ -19,12 +19,16 @@ function useMediaQuery(query) {
   return matches
 }
 
-/** Each chapter hands the field to its own state as it scrolls into place. */
+/**
+ * Each chapter hands the field to its own state as it scrolls into place.
+ * On phones the field always lives in the top third of the screen
+ * (offsetYMobile), and chapter copy starts below that zone (styles.css).
+ */
 const CHAPTERS = [
-  { id: 'thinking', morph: 1, offsetX: 1.55, offsetYMobile: 1.25 },
-  { id: 'memory', morph: 2, offsetX: 1.6, offsetYMobile: 1.55 },
+  { id: 'thinking', morph: 1, offsetX: 1.55, offsetYMobile: 1.5 },
+  { id: 'memory', morph: 2, offsetX: 1.6, offsetYMobile: 1.5 },
   { id: 'try', morph: 0, offsetX: 1.65, offsetYMobile: 1.5 },
-  { id: 'uses', morph: 0, offsetX: 1.9, offsetYMobile: 1.3 },
+  { id: 'uses', morph: 0, offsetX: 1.9, offsetYMobile: 1.5 },
 ]
 
 export default function App() {
@@ -32,6 +36,7 @@ export default function App() {
   const isMobile = useMediaQuery('(max-width: 699px)')
   const rootRef = useRef(null)
   const [demoState, setDemoState] = useState('listening')
+  const [accessShown, setAccessShown] = useState(false)
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
@@ -60,6 +65,40 @@ export default function App() {
       fieldState.override = null
     }
   }, [])
+
+  // Phones: the field lives in the top of the screen. When copy scrolls up
+  // into that zone, dim the field in proportion to the overlap.
+  useEffect(() => {
+    if (!isMobile) {
+      fieldState.dim = 0
+      return undefined
+    }
+    const blocks = [...document.querySelectorAll('main .display, main .lede, main .facts, main .concept-note')]
+    let raf = 0
+    const measure = () => {
+      raf = 0
+      const zone = window.innerHeight * 0.4
+      let dim = 0
+      for (const el of blocks) {
+        const r = el.getBoundingClientRect()
+        if (r.bottom <= 56 || r.top >= zone) continue // 56px: under the top bar
+        dim = Math.max(dim, Math.min(1, (zone - r.top) / Math.min(r.height, zone)))
+      }
+      fieldState.dim = dim
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(measure)
+    }
+    measure()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      fieldState.dim = 0
+    }
+  }, [isMobile])
 
   const choose = (state) => {
     setDemoState(state.id)
@@ -94,6 +133,7 @@ export default function App() {
         <a className="button button--small" href="#access">
           Request access
         </a>
+        <span className="concept-tag">Portfolio concept</span>
       </header>
 
       <main id="top">
@@ -105,12 +145,15 @@ export default function App() {
           </p>
           <div className="actions">
             <a className="button" href="#access">
-              Request early access
+              Request access
             </a>
             <a className="button button--quiet" href="#thinking">
               Watch it think
             </a>
           </div>
+          <p className="concept-note">
+            NOEMA is a fictional product, designed as a portfolio concept. Nothing on this page is for sale.
+          </p>
         </section>
 
         <section className="chapter" id="thinking" aria-labelledby="thinking-title">
@@ -186,16 +229,22 @@ export default function App() {
         <section className="chapter chapter--panel access" id="access" aria-labelledby="access-title">
           <h2 id="access-title" className="display display--2">Bring it into your product.</h2>
           <p className="lede">
-            We’re opening NOEMA to a small group of teams building voice into cars, homes and devices.
+            If NOEMA were real, this is where a team would ask to try it. It isn’t, so the button below only explains
+            that.
           </p>
-          <a className="button" href="mailto:hello@noema.example?subject=NOEMA%20early%20access">
-            Email the team
-          </a>
+          <button type="button" className="button" onClick={() => setAccessShown(true)} aria-controls="access-message">
+            Request access
+          </button>
+          <p id="access-message" className="access-message" role="status">
+            {accessShown
+              ? 'This is a demo. NOEMA is a portfolio concept with no product, waitlist or team behind it, so nothing was sent and nothing about you was collected or stored.'
+              : ''}
+          </p>
         </section>
       </main>
 
       <footer className="foot">
-        <span>NOEMA is a design concept. The product, team and address are fictional.</span>
+        <span>NOEMA is a fictional portfolio concept. There is no product, company or waitlist.</span>
         <a href={import.meta.env.BASE_URL}>See the AUREX site</a>
       </footer>
     </div>

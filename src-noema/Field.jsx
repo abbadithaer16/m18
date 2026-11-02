@@ -17,6 +17,7 @@ const vertexShader = /* glsl */ `
   uniform float uSize;
   uniform float uPixelRatio;
   uniform float uMotion;    // 0 when the visitor prefers reduced motion
+  uniform float uFade;      // dims the field while copy passes over it (phones)
 
   varying float vHue;
   varying float vAlpha;
@@ -34,7 +35,8 @@ const vertexShader = /* glsl */ `
 
     vec3 orb = aOrb * (1.0 + 0.035 * sin(uTime * 1.3 + aSeed * 0.6) * uMotion);
     vec3 galaxy = aGalaxy;
-    galaxy.xz *= rot(uTime * 0.06 * uMotion);
+    galaxy.xz *= rot(uTime * 0.06 * uMotion); // spin within the disk's own plane
+    galaxy.yz *= rot(0.42);                   // then a fixed tilt towards the viewer
     vec3 brain = aBrain;
     brain.xz *= rot(sin(uTime * 0.25) * 0.12 * uMotion);
 
@@ -59,7 +61,7 @@ const vertexShader = /* glsl */ `
     float twinkle = 0.75 + 0.25 * sin(uTime * (1.5 + aSeed * 2.0) + aSeed * 60.0) * uMotion + 0.25 * (1.0 - uMotion);
     gl_PointSize = uSize * uPixelRatio * (0.55 + aSeed * 0.9) / -mv.z;
     vHue = aHue;
-    vAlpha = twinkle * uIntro;
+    vAlpha = twinkle * uIntro * uFade;
   }
 `
 
@@ -113,6 +115,7 @@ export default function Field({ count, reducedMotion }) {
           uSize: { value: 22 },
           uPixelRatio: { value: 1 },
           uMotion: { value: reducedMotion ? 0 : 1 },
+          uFade: { value: 1 },
           uMint: { value: new THREE.Color('#7ef2d2') },
           uViolet: { value: new THREE.Color('#9d8cff') },
         },
@@ -135,14 +138,25 @@ export default function Field({ count, reducedMotion }) {
     const target = fieldState.override ?? fieldState.morph
     u.uMorph.value = reducedMotion ? target : damp(u.uMorph.value, target, 2.6, dt)
 
+    // Copy overlapping the field's zone dims it, so text stays readable.
+    const fade = 1 - 0.82 * fieldState.dim
+    u.uFade.value = reducedMotion ? fade : damp(u.uFade.value, fade, 10, dt)
+
     const pts = pointsRef.current
     if (pts) {
       const mobile = size.width < 700
-      const offset = mobile ? 0 : fieldState.offsetX
-      pts.position.x = damp(pts.position.x, offset, 3, dt)
-      pts.position.y = damp(pts.position.y, mobile ? fieldState.offsetYMobile : 0, 3, dt)
-      const s = mobile ? 0.6 : 0.92
-      pts.scale.setScalar(damp(pts.scale.x, s, 3, dt))
+      const x = mobile ? 0 : fieldState.offsetX
+      const y = mobile ? fieldState.offsetYMobile : 0
+      const s = mobile ? 0.52 : 0.92
+      if (reducedMotion) {
+        // Snap: even sub-pixel easing reads as motion in a dense point field.
+        pts.position.set(x, y, 0)
+        pts.scale.setScalar(s)
+      } else {
+        pts.position.x = damp(pts.position.x, x, 3, dt)
+        pts.position.y = damp(pts.position.y, y, 3, dt)
+        pts.scale.setScalar(damp(pts.scale.x, s, 3, dt))
+      }
     }
   })
 

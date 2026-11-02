@@ -35,7 +35,7 @@ function orb(i, rand, out) {
   out[2] = z * r
 }
 
-/** Thinking: a three-armed spiral galaxy with a bright core, seen at a tilt. */
+/** Thinking: a three-armed spiral galaxy with a bright core (flat; tilted in the shader). */
 function galaxy(i, rand, out) {
   const arms = 3
   const radius = 2.2
@@ -47,11 +47,10 @@ function galaxy(i, rand, out) {
   const thickness = 0.07 * (1 - r / radius) + 0.012
   const x = Math.cos(angle) * r + gaussian(rand) * 0.04
   const z = Math.sin(angle) * r + gaussian(rand) * 0.04
-  const y = gaussian(rand) * thickness
-  const tilt = -0.42
+  // Flat disk in the XZ plane; the shader spins it in-plane, then tilts it.
   out[0] = x
-  out[1] = y * Math.cos(tilt) - z * Math.sin(tilt)
-  out[2] = y * Math.sin(tilt) + z * Math.cos(tilt)
+  out[1] = gaussian(rand) * thickness
+  out[2] = z
 }
 
 /** Remembering: two folded hemispheres, a cerebellum and a short stem, in profile. */

@@ -4,11 +4,13 @@
 //   override: set by the "Try the three states" controls while that section is in view
 //   offsetX: horizontal placement on wide screens, so the field sits beside the copy
 //   offsetYMobile: vertical placement on phones, where copy and field stack
+//   dim: set from scroll on phones when copy passes through the field's zone
 export const fieldState = {
   morph: 0,
   override: null,
   offsetX: 1.9,
   offsetYMobile: 1.2,
+  dim: 0, // 0–1: how much copy currently overlaps the field's zone on phones
 }
 
 export const STATES = [

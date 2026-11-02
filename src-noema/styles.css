@@ -370,6 +370,38 @@ main {
   margin-top: 32px;
 }
 
+/* ---------- concept labelling and demo message ---------- */
+
+.concept-tag {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--haze);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.concept-note {
+  max-width: var(--measure);
+  margin-top: 20px;
+  color: var(--haze);
+  font-size: 14px;
+}
+
+.access-message {
+  max-width: var(--measure);
+  min-height: 1.55em;
+  margin-top: 20px;
+  color: var(--mist);
+}
+
+.access-message:not(:empty) {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--lumen);
+  border-radius: 12px;
+}
+
 /* ---------- footer ---------- */
 
 .foot {
@@ -397,10 +429,37 @@ main {
     margin-left: auto;
   }
 
+  .concept-tag {
+    display: none; /* the hero note and footer carry the label on phones */
+  }
+
+  /* The field occupies the top third of the screen on phones (see App.jsx),
+     so copy starts below it. While text scrolls up through that zone, a dark
+     halo keeps every glyph readable over the particles. */
   .chapter {
     justify-content: flex-end;
-    padding-bottom: 64px;
-    background: linear-gradient(to bottom, rgba(3, 6, 10, 0) 35%, rgba(3, 6, 10, 0.85) 75%);
+    padding-top: 38svh;
+    padding-bottom: 56px;
+    background: linear-gradient(to bottom, rgba(3, 6, 10, 0) 30%, rgba(3, 6, 10, 0.8) 60%);
+  }
+
+  .chapter .display,
+  .chapter .lede,
+  .facts li,
+  .concept-note {
+    text-shadow:
+      0 0 3px var(--abyss),
+      0 0 10px var(--abyss),
+      0 0 22px var(--abyss);
+  }
+
+  .display--2 {
+    font-size: clamp(2.3rem, 11vw, 3.2rem);
+  }
+
+  .facts li {
+    padding: 10px 0;
+    font-size: 15px;
   }
 
   .chapter--panel {
