@@ -36,10 +36,11 @@ src/
     useDragRotate.js        Pointer drag-to-rotate with inertia
     useMediaQuery.js        Small responsive / reduced-motion helpers
   three/
-    Vehicle.jsx             Procedural AUREX ONE body (swap for a GLTF
-                           loader with the same props later)
-    Wheel.jsx               Wheel/rim/brake assembly, per-corner
-    Cockpit.jsx             Stylized interior
+    Vehicle.jsx             AUREX ONE glTF model (public/models), wired
+                           to the configurator and scroll lighting
+    ProceduralVehicle.jsx   Original procedural car, used as a fallback
+                           if the model fails to load
+    Wheel.jsx / Cockpit.jsx Parts of the procedural fallback
     Studio.jsx               Lighting rig, procedural environment probe,
                            reflective floor
     Experience.jsx           Scene root: camera damping, vehicle
@@ -55,13 +56,27 @@ src/
 
 ## Notes on the vehicle model
 
-No licensed GLB was sourced for this build, so the AUREX ONE is a
-procedurally generated sports-coupe silhouette (extruded body profile +
-wheel/rim assemblies + glass canopy + lighting details), built with a
-believable long-hood / wide-stance proportion. `Vehicle.jsx` exposes the
-same `{ bodyColor, wheelOption, interiorColor }` prop contract a future
-GLTF-based component could use, so swapping in a licensed model later
-shouldn't require touching the scroll/camera/lighting system.
+The AUREX ONE is rendered from `public/models/aurex-one.glb` (3.4 MB), adapted
+from **[Car Concept](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept)**
+by Eric Chadwick / Darmstadt Graphics Group, part of the Khronos glTF Sample
+Assets, licensed **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**
+(itself based on a CC0 model by "Unity Fan"). The licence requires the credit
+shown in the site footer; keep it if you republish.
+
+Changes made to the source asset (with gltf-transform, 11.8 MB → 3.4 MB):
+
+- Khronos and 3D Commerce logos removed (licence-plate texture blanked, tyre
+  sidewall colour and normal maps flattened where the logos were)
+- `KHR_materials_variants`, transmission and iridescence dropped (the site
+  uses its own tinted glass and configurator materials)
+- Textures capped at 1024 px and re-encoded as WebP; geometry welded and
+  meshopt-compressed (decoded by the bundled meshopt decoder, no CDN)
+
+At runtime `src/three/Vehicle.jsx` rotates the model so its front faces +X,
+swaps in the site's glass, renders an AUREX plate, and drives paint, rim
+finish, interior trim and the head/tail lamps from the configurator and
+scroll state. If the model fails to load, it falls back to the original
+procedural car in `src/three/ProceduralVehicle.jsx`.
 
 ## Performance notes
 

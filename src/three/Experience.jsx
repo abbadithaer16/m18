@@ -49,7 +49,8 @@ export default function Experience({ bodyColor, wheelOption, interiorColor, high
     // frustum shows far less width). Pull the camera back from the look-at
     // point proportionally so the full car still fits horizontally.
     const aspect = size.width / size.height
-    const frameScale = aspect < 1.1 ? THREE.MathUtils.clamp(1.15 / aspect, 1, 2.4) : 1
+    const portraitScale = aspect < 1.1 ? THREE.MathUtils.clamp(1.15 / aspect, 1, 2.4) : 1
+    const frameScale = 1 + (portraitScale - 1) * (camState.portraitFit ?? 1)
     // The fog range (Studio: near 9, far 26) is tuned for the landscape
     // camera distances. Pulling the camera back by up to 2.4× on portrait
     // phones put the car ~22 units away — ~75% fogged to near-black. Scale

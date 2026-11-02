@@ -1,4 +1,4 @@
-import { BRAND, FOOTER_LINKS } from '../data/content'
+import { BRAND, FOOTER_LINKS, MODEL_CREDIT } from '../data/content'
 import './Footer.css'
 
 export default function Footer() {
@@ -18,6 +18,17 @@ export default function Footer() {
           ))}
         </nav>
       </div>
+      <p className="footer-credit">
+        Vehicle model based on{' '}
+        <a href={MODEL_CREDIT.sourceUrl} target="_blank" rel="noreferrer" data-interactive>
+          {MODEL_CREDIT.title}
+        </a>{' '}
+        by {MODEL_CREDIT.author}, licensed{' '}
+        <a href={MODEL_CREDIT.licenseUrl} target="_blank" rel="noreferrer" data-interactive>
+          {MODEL_CREDIT.license}
+        </a>
+        . Modified: logos removed, materials and textures adapted.
+      </p>
     </footer>
   )
 }

@@ -97,3 +97,13 @@ export const BRAND = {
   name: 'AUREX',
   location: 'AMMAN / JORDAN',
 }
+
+// The 3D vehicle is adapted from a CC-BY 4.0 asset; the licence requires this
+// credit to stay visible wherever the site is published (shown in the footer).
+export const MODEL_CREDIT = {
+  title: 'Car Concept',
+  author: 'Eric Chadwick / Darmstadt Graphics Group (Khronos glTF Sample Assets)',
+  sourceUrl: 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept',
+  license: 'CC BY 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+}

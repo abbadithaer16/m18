@@ -9,7 +9,8 @@
 // toward that section's own end-state, and the next section picks up
 // from wherever the previous one left off (a continuous relay).
 export const sceneState = {
-  camera: { x: 1.1, y: 1.6, z: 9.2, lx: 0, ly: 0.62, lz: 0, fov: 22 },
+  // portraitFit: 0–1 weight of the portrait-viewport pull-back (see Experience).
+  camera: { x: 1.1, y: 1.6, z: 9.2, lx: 0, ly: 0.62, lz: 0, fov: 22, portraitFit: 1 },
   vehicle: { rotY: 0.32, posY: 0, posX: 0 },
   light: { key: 0.55, rim: 0.7, fill: 0.16, env: 0.4, floor: 0.16, exposure: 0.6 },
   headlight: { intensity: 0.08 },

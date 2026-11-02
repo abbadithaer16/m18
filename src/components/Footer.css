@@ -51,3 +51,22 @@
 .footer-links a:hover {
   color: var(--c-warm-white);
 }
+
+.footer-credit {
+  margin-top: clamp(18px, 3vh, 28px);
+  max-width: 72ch;
+  font-size: 10px;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--c-text-faint);
+}
+
+.footer-credit a {
+  color: var(--c-text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-credit a:hover {
+  color: var(--c-warm-white);
+}
