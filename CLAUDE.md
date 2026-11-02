@@ -15,7 +15,8 @@ Load only the skills that match the task in hand, not all of them every time.
 
 | Task | Consult |
 |---|---|
-| Visual composition, layout, typography, aesthetic direction | `frontend-design`, `emil-design-eng` |
+| Design-system recommendations: typography, palette, layout patterns, accessibility checks | `ui-ux-pro-max` (search with `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --design-system`) |
+| Visual composition and implementation, aesthetic direction | `frontend-design`, `emil-design-eng` |
 | UI timing, easing, durations, building an animation | `animate` |
 | Reviewing motion in a diff, or jank and dropped frames | `review-animations`, `animation-performance` |
 | Touch, mobile feel, tap and press feedback | `mobile-native` |
@@ -29,6 +30,14 @@ Load only the skills that match the task in hand, not all of them every time.
 | Frame rate, draw calls, memory | `threejs-performance` |
 | R3F and Drei patterns | `threejs-react-three-fiber` |
 | Browser verification (screenshots, console, interaction) | `webapp-testing` |
+
+Division of labour: `ui-ux-pro-max` recommends (design system, type, palette, layout, accessibility); `frontend-design` composes and implements; the Emil, GSAP and Three.js skills own motion and 3D.
+
+The UI UX Pro Max installer also added `design-system`, `brand`, `design`, `banner-design`, `slides` and `ui-styling`. Use them only when a task clearly calls for them. `ui-styling` targets shadcn/ui and Tailwind, which this project does not use. `design`'s logo, icon and CIP generators call the Gemini API; do not run them without the user's agreement.
+
+### When skills disagree
+
+Resolve conflicts against the user's visual references and this project's requirements, not against whichever skill spoke last. AUREX is an established dark, cinematic, editorial design (Big Shoulders Display and Archivo, near-black and warm white, a single red accent). Treat generated palettes, fonts and layout patterns as input to check, not instructions to apply; for example, a `--design-system` query for AUREX suggests a light background and Inter, both of which conflict with the current design. Accessibility findings (contrast, focus, reduced motion, touch targets) still apply.
 
 ## Constraints when applying a skill
 
