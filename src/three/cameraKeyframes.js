@@ -19,30 +19,31 @@ export const BODY_END = {
   taillight: { intensity: 0.32 },
 }
 
-// Front wheel of the model: centre x 1.49, y 0.38, z 0.98 (outer face ~1.1).
+// Wheel close-up. The car is turned to rotY 1.0 here, which swings the rear
+// left wheel (centre y 0.33) to world ≈ (0.0, 0.33, 1.40), facing the camera;
+// its outward axis is (sin 1, 0, cos 1).
 export const WHEELS_END = {
-  camera: { x: 2.55, y: 0.62, z: 2.75, lx: 1.45, ly: 0.4, lz: 0.98, fov: 24 },
+  camera: { x: 1.55, y: 0.52, z: 2.45, lx: 0.02, ly: 0.34, lz: 1.38, fov: 26 },
   vehicle: { rotY: 1.0 },
   light: { key: 1.05, rim: 0.75, fill: 0.22, env: 0.55, floor: 0.28, exposure: 0.95 },
   headlight: { intensity: 0.15 },
   taillight: { intensity: 0.28 },
 }
 
-// Low front three-quarter on the headlight graphic (model lamps sit at
-// x 2.10–2.27, y 0.62–0.69, z ±0.8).
+// Low front three-quarter on the headlamps (nose at x ≈ 2.0, lamps y ≈ 0.45–0.6).
 export const LIGHT_END = {
-  camera: { x: 4.3, y: 0.78, z: 2.35, lx: 1.7, ly: 0.58, lz: 0.15, fov: 26 },
+  camera: { x: 3.75, y: 0.62, z: 2.0, lx: 1.7, ly: 0.48, lz: 0.12, fov: 26 },
   vehicle: { rotY: 0.06 },
   light: { key: 0.3, rim: 0.45, fill: 0.08, env: 0.2, floor: 0.14, exposure: 0.55 },
   headlight: { intensity: 2.4 },
   taillight: { intensity: 0.15 },
 }
 
-// Driver's eye behind the central steering wheel (x ≈ 0.93, y ≈ 0.65).
-// portraitFit: 0 opts out of the portrait pull-back in Experience, which would
-// otherwise push this camera out through the roof on phones.
+// Driver's eye, left-hand drive (driver side is −z after the rotation),
+// looking forward over the wheel. portraitFit: 0 opts out of the portrait
+// pull-back in Experience, which would push this camera out through the roof.
 export const INTERIOR_END = {
-  camera: { x: 0.12, y: 1.0, z: 0.28, lx: 1.15, ly: 0.66, lz: -0.04, fov: 46, portraitFit: 0 },
+  camera: { x: -0.3, y: 0.98, z: -0.16, lx: 0.75, ly: 0.7, lz: -0.32, fov: 50, portraitFit: 0 },
   vehicle: { rotY: 0.06 },
   light: { key: 0.6, rim: 0.45, fill: 0.2, env: 0.35, floor: 0.1, exposure: 0.75 },
   headlight: { intensity: 0.3 },

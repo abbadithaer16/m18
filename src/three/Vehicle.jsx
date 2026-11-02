@@ -4,55 +4,57 @@ import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import ProceduralVehicle from './ProceduralVehicle'
-import { GLASS } from './palette'
 import { sceneState } from '../state/sceneState'
 
 /**
- * AUREX ONE — production model.
+ * The car: a 1985 DeLorean DMC-12 Time Machine.
  *
- * Source: "Car Concept" from the Khronos glTF Sample Assets, by Eric Chadwick
- * / Darmstadt Graphics Group, CC-BY 4.0 (itself based on a CC0 model by
- * "Unity Fan"). Credited in the footer and README. The web asset in
- * public/models was prepared with gltf-transform: Khronos / 3D Commerce logos
- * removed from the plate and tyre-sidewall textures, material variants and
- * transmission dropped, textures capped at 1024 px as WebP, meshopt geometry.
+ * Source: "1985 DeLorean DMC-12 Time Machine (BTTF)" by VTX on Sketchfab,
+ * CC BY-NC-SA 4.0 — non-commercial use only; adaptations of the model must
+ * carry the same licence. Credited in the footer and README.
  *
- * The model is authored at real scale, front towards +Z. The scroll camera
- * keyframes assume the front faces +X, so it is rotated a quarter turn; its
- * front axle then lands at x ≈ 1.49, matching the old procedural car's 1.5.
+ * public/models/delorean-dmc12.glb was prepared with gltf-transform
+ * (28 MB → 4.5 MB): transmission dropped, welded, simplified 461k → 238k
+ * triangles (error-bounded), textures ≤1024 px WebP, meshopt geometry.
+ *
+ * Everything model-specific lives in MODEL so another car can be swapped in
+ * by changing this block (plus the camera keyframes that frame it).
  */
-const MODEL_URL = `${import.meta.env.BASE_URL}models/aurex-one.glb`
-// Meshopt decoder is bundled; no Draco in this file, so don't wire the CDN decoder.
-const USE_DRACO = false
+const T = 'TimeBTTF_TimeMachine1_1985'
+const MODEL = {
+  url: `${import.meta.env.BASE_URL}models/delorean-dmc12.glb`,
+  // Authored ~1.33× real size, front towards +Z. 0.75 restores the DMC-12's
+  // 2.41 m wheelbase / 1.14 m height; the quarter turn points the front at
+  // +X, which the scroll camera keyframes assume.
+  scale: 0.75,
+  rotationY: Math.PI / 2,
+  materials: {
+    paint: `${T}Paint_Material1`, // brushed stainless body panels (textured)
+    rims: `${T}_Wheel1A_3D_3DWheel1A_Material1`,
+    interior: `${T}InteriorA_Material1`,
+    headlights: 'map2BTTF_TimeMachine1_1985LightEmissiveA_Material1',
+    taillights: 'red_glas',
+  },
+}
 
+// The configurator colour multiplies the stainless texture, so these finishes
+// tint the brushed metal rather than repaint it flat.
 const RIM_FINISHES = {
-  'forged-01': { color: '#c9cacc', metalness: 1, roughness: 0.16 },
-  'forged-02': { color: '#9a9a9c', metalness: 1, roughness: 0.3 },
-  'forged-03': { color: '#6f7073', metalness: 1, roughness: 0.42 },
+  'forged-01': { color: '#ffffff', metalness: 0.92, roughness: 0.32 },
+  'forged-02': { color: '#9a9a9c', metalness: 0.95, roughness: 0.36 },
+  'forged-03': { color: '#55565a', metalness: 0.95, roughness: 0.45 },
 }
 
-// Emissive strength of the source lamps relative to the old procedural lamp
-// materials, which were driven 1:1 by sceneState.{head,tail}light.intensity.
-const HEADLIGHT_GAIN = 1.6
-const TAILLIGHT_GAIN = 1.4
+// Interior is one texture atlas (seats, dash, trim). A full multiply by a
+// near-black swatch would erase it, so blend the swatch into white.
+const INTERIOR_TINT_STRENGTH = 0.55
+const WHITE = new THREE.Color('#ffffff')
+const interiorTint = (hex) => '#' + WHITE.clone().lerp(new THREE.Color(hex), INTERIOR_TINT_STRENGTH).getHexString()
 
-function makePlateTexture() {
-  const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 128
-  const ctx = canvas.getContext('2d')
-  ctx.fillStyle = '#050505'
-  ctx.fillRect(0, 0, 512, 128)
-  ctx.fillStyle = '#f4f1ea'
-  ctx.font = "700 74px 'Big Shoulders Display', 'Arial Narrow', sans-serif"
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('AUREX', 256, 68)
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.flipY = false // glTF UV convention
-  return tex
-}
+// Lamp emission relative to sceneState.{head,tail}light.intensity, which the
+// scroll keyframes drive (≈0.1 idle, 2.4 in the headlight scene).
+const HEADLIGHT_GAIN = 2.6
+const TAILLIGHT_GAIN = 2.0
 
 function tweenMaterial(material, { color, metalness, roughness }, duration = 1.15) {
   const target = new THREE.Color(color)
@@ -61,71 +63,46 @@ function tweenMaterial(material, { color, metalness, roughness }, duration = 1.1
 }
 
 function GltfVehicle({ bodyColor, wheelOption, interiorColor }) {
-  const { scene, materials } = useGLTF(MODEL_URL, USE_DRACO, true)
+  const { scene, materials } = useGLTF(MODEL.url, false, true)
+  const mats = useMemo(
+    () => Object.fromEntries(Object.entries(MODEL.materials).map(([role, name]) => [role, materials[name]])),
+    [materials],
+  )
 
-  const glass = useMemo(() => new THREE.MeshPhysicalMaterial({ ...GLASS, side: THREE.DoubleSide }), [])
-  const plateTexture = useMemo(() => makePlateTexture(), [])
-
-  // One-time material setup. useGLTF caches the parsed scene, so this is
-  // written to be idempotent (React StrictMode mounts effects twice in dev).
   useLayoutEffect(() => {
     scene.traverse((obj) => {
       if (!obj.isMesh) return
-      const isGlass = obj.material?.name === 'Glass'
-      if (isGlass) obj.material = glass
-      obj.castShadow = !isGlass
-      obj.receiveShadow = !isGlass
+      const transparent = obj.material?.transparent
+      obj.castShadow = !transparent
+      obj.receiveShadow = !transparent
     })
-    const plate = materials.License
-    if (plate) {
-      plate.map = plateTexture
-      plate.needsUpdate = true
-    }
-    // The secondary panels (sills, lower bumper, mirror caps) are a dark
-    // clearcoated paint in the source; keep them as the AUREX gloss-black trim.
-    if (materials['Paint 2 Carmine']) materials['Paint 2 Carmine'].color.set('#050505')
-    // The source paints carry a 128px tiled metal-flake normal map. At web
-    // viewing distances it is far below pixel size and renders as sparkling
-    // noise, so the paints are left smooth; the clearcoat carries the gloss.
-    for (const name of ['Paint 1 Carmine', 'Paint 2 Carmine']) {
-      const m = materials[name]
-      if (m?.normalMap) {
-        m.normalMap = null
-        m.needsUpdate = true
-      }
-    }
-  }, [scene, materials, glass, plateTexture])
+  }, [scene])
 
-  // Paint, rims and interior: snap on first mount, tween on later changes.
   const first = useRef(true)
   useEffect(() => {
-    const paint = materials['Paint 1 Carmine']
-    const rim = materials.Rim2
-    const trim = materials['Interior 3 Carmine']
-    const rimFinish = RIM_FINISHES[wheelOption.id] ?? RIM_FINISHES['forged-01']
     const paintTarget = { color: bodyColor.hex, metalness: bodyColor.metalness, roughness: bodyColor.roughness }
-    const trimTarget = { color: interiorColor.hex, metalness: 0, roughness: 0.45 }
-    if (first.current) {
-      first.current = false
-      for (const [m, t] of [[paint, paintTarget], [rim, rimFinish], [trim, trimTarget]]) {
-        if (!m) continue
+    const rimTarget = RIM_FINISHES[wheelOption.id] ?? RIM_FINISHES['forged-01']
+    const interiorTarget = { color: interiorTint(interiorColor.hex), metalness: 0, roughness: 0.6 }
+    const pairs = [[mats.paint, paintTarget, 1.15], [mats.rims, rimTarget, 0.6], [mats.interior, interiorTarget, 0.8]]
+    for (const [m, t, d] of pairs) {
+      if (!m) continue
+      if (first.current) {
         m.color.set(t.color)
         m.metalness = t.metalness
         m.roughness = t.roughness
+      } else {
+        tweenMaterial(m, t, d)
       }
-      return
     }
-    if (paint) tweenMaterial(paint, paintTarget)
-    if (rim) tweenMaterial(rim, rimFinish, 0.6)
-    if (trim) tweenMaterial(trim, trimTarget, 0.8)
-  }, [bodyColor, wheelOption, interiorColor, materials])
+    first.current = false
+  }, [bodyColor, wheelOption, interiorColor, mats])
 
   useFrame(() => {
-    if (materials.Headlight) materials.Headlight.emissiveIntensity = sceneState.headlight.intensity * HEADLIGHT_GAIN
-    if (materials.Brakelight) materials.Brakelight.emissiveIntensity = sceneState.taillight.intensity * TAILLIGHT_GAIN
+    if (mats.headlights) mats.headlights.emissiveIntensity = sceneState.headlight.intensity * HEADLIGHT_GAIN
+    if (mats.taillights) mats.taillights.emissiveIntensity = sceneState.taillight.intensity * TAILLIGHT_GAIN
   })
 
-  return <primitive object={scene} rotation={[0, Math.PI / 2, 0]} />
+  return <primitive object={scene} scale={MODEL.scale} rotation={[0, MODEL.rotationY, 0]} />
 }
 
 /** If the model can't be fetched or parsed, keep the experience alive with the procedural car. */
@@ -146,9 +123,8 @@ class VehicleBoundary extends Component {
 }
 
 export default function Vehicle(props) {
-  const fallback = <ProceduralVehicle {...props} />
   return (
-    <VehicleBoundary fallback={fallback}>
+    <VehicleBoundary fallback={<ProceduralVehicle {...props} />}>
       <Suspense fallback={null}>
         <GltfVehicle {...props} />
       </Suspense>
@@ -156,4 +132,4 @@ export default function Vehicle(props) {
   )
 }
 
-useGLTF.preload(MODEL_URL, USE_DRACO, true)
+useGLTF.preload(MODEL.url, false, true)

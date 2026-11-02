@@ -27,7 +27,7 @@ export default function Footer() {
         <a href={MODEL_CREDIT.licenseUrl} target="_blank" rel="noreferrer" data-interactive>
           {MODEL_CREDIT.license}
         </a>
-        . Modified: logos removed, materials and textures adapted.
+        . {MODEL_CREDIT.changes}
       </p>
     </footer>
   )

@@ -67,6 +67,10 @@ export const BODY_COLORS = [
   { id: 'arctic', name: 'Arctic White', hex: '#eef0ee', metalness: 0.6, roughness: 0.3 },
 ]
 
+// The DeLorean's body is brushed stainless; the swatch colour tints that
+// texture, so the silver swatch is the car's natural finish and the default.
+export const DEFAULT_BODY_COLOR_ID = 'titanium'
+
 export const WHEEL_OPTIONS = [
   { id: 'forged-01', name: 'Option 01', spokes: 5, style: 'blade' },
   { id: 'forged-02', name: 'Option 02', spokes: 10, style: 'mesh' },
@@ -98,12 +102,14 @@ export const BRAND = {
   location: 'AMMAN / JORDAN',
 }
 
-// The 3D vehicle is adapted from a CC-BY 4.0 asset; the licence requires this
-// credit to stay visible wherever the site is published (shown in the footer).
+// The 3D vehicle is adapted from a CC BY-NC-SA 4.0 asset: credit must stay
+// visible (footer), use must be non-commercial, and the adapted model is
+// shared under the same licence.
 export const MODEL_CREDIT = {
-  title: 'Car Concept',
-  author: 'Eric Chadwick / Darmstadt Graphics Group (Khronos glTF Sample Assets)',
-  sourceUrl: 'https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept',
-  license: 'CC BY 4.0',
-  licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
+  title: '1985 DeLorean DMC-12 Time Machine (BTTF)',
+  author: 'VTX',
+  sourceUrl: 'https://sketchfab.com/3d-models/1985-delorean-dmc-12-time-machine-bttf-6fdfe2e2adba4886b48cc523871e88be',
+  license: 'CC BY-NC-SA 4.0',
+  licenseUrl: 'https://creativecommons.org/licenses/by-nc-sa/4.0/',
+  changes: 'Modified: geometry simplified and compressed, textures resized, materials adapted. Non-commercial use only.',
 }

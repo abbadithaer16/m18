@@ -36,7 +36,7 @@ src/
     useDragRotate.js        Pointer drag-to-rotate with inertia
     useMediaQuery.js        Small responsive / reduced-motion helpers
   three/
-    Vehicle.jsx             AUREX ONE glTF model (public/models), wired
+    Vehicle.jsx             The car's glTF model (public/models), wired
                            to the configurator and scroll lighting
     ProceduralVehicle.jsx   Original procedural car, used as a fallback
                            if the model fails to load
@@ -56,27 +56,30 @@ src/
 
 ## Notes on the vehicle model
 
-The AUREX ONE is rendered from `public/models/aurex-one.glb` (3.4 MB), adapted
-from **[Car Concept](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept)**
-by Eric Chadwick / Darmstadt Graphics Group, part of the Khronos glTF Sample
-Assets, licensed **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**
-(itself based on a CC0 model by "Unity Fan"). The licence requires the credit
-shown in the site footer; keep it if you republish.
+The car is rendered from `public/models/delorean-dmc12.glb` (4.5 MB), adapted
+from **[1985 DeLorean DMC-12 Time Machine (BTTF)](https://sketchfab.com/3d-models/1985-delorean-dmc-12-time-machine-bttf-6fdfe2e2adba4886b48cc523871e88be)**
+by VTX, licensed **[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)**:
 
-Changes made to the source asset (with gltf-transform, 11.8 MB → 3.4 MB):
+- **Attribution:** the credit in the site footer must stay.
+- **NonCommercial:** this site may not be used commercially while it ships
+  this model.
+- **ShareAlike:** the adapted `.glb` is distributed under the same licence.
 
-- Khronos and 3D Commerce logos removed (licence-plate texture blanked, tyre
-  sidewall colour and normal maps flattened where the logos were)
-- `KHR_materials_variants`, transmission and iridescence dropped (the site
-  uses its own tinted glass and configurator materials)
-- Textures capped at 1024 px and re-encoded as WebP; geometry welded and
-  meshopt-compressed (decoded by the bundled meshopt decoder, no CDN)
+DeLorean and Back to the Future are trademarks of their respective owners;
+this is a non-commercial fan/portfolio use.
 
-At runtime `src/three/Vehicle.jsx` rotates the model so its front faces +X,
-swaps in the site's glass, renders an AUREX plate, and drives paint, rim
-finish, interior trim and the head/tail lamps from the configurator and
-scroll state. If the model fails to load, it falls back to the original
-procedural car in `src/three/ProceduralVehicle.jsx`.
+Changes made to the source asset (with gltf-transform, 28 MB → 4.5 MB):
+transmission dropped, geometry welded and simplified 461k → 238k triangles
+(error-bounded), textures capped at 1024 px as WebP, meshopt compression
+(decoded by the bundled meshopt decoder, no CDN).
+
+At runtime `src/three/Vehicle.jsx` scales the model by 0.75 to real DMC-12
+size and turns it so the front faces +X. All model-specific settings (file,
+scale, which materials are paint, rims, interior and lamps) are in its
+`MODEL` block. The configurator tints the brushed-stainless body, rims and
+interior; the scroll state drives head- and tail-lamp emission. If the model
+fails to load, the original procedural car (`ProceduralVehicle.jsx`) is
+shown instead.
 
 ## Performance notes
 
