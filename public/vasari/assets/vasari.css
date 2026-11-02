@@ -76,6 +76,19 @@ dd {
   }
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.back {
+  color: var(--ink);
+}
+
 /* ---------- labels ---------- */
 
 .lbl {
@@ -279,6 +292,56 @@ dd {
 
 .cursor.open .cursor__label {
   transform: scale(1);
+}
+
+/* ---------- page transition sheet ---------- */
+
+.pagesheet {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: var(--sheet);
+  pointer-events: none;
+}
+
+/* Covers a freshly navigated page until transition.js lifts the real sheet. */
+html.sheet-pending body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  background: var(--sheet);
+}
+
+/* ---------- scroll reveals ---------- */
+
+.reveal {
+  display: block;
+  overflow: hidden;
+}
+
+.reveal > * {
+  display: block;
+}
+
+/* Boxed labels keep their own size inside a reveal mask. */
+.reveal > .box {
+  display: inline-flex;
+}
+
+.reveal:has(> .box) {
+  width: max-content;
+  max-width: 100%;
+}
+
+html.js .reveal > * {
+  transform: translateY(110%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js .reveal > * {
+    transform: none;
+  }
 }
 
 /* ---------- masked text lines ---------- */

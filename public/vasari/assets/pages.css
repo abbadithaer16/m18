@@ -1,4 +1,5 @@
-/* Inner pages (films, biography, retrospective): page-flow layout. */
+/* Inner pages (films, biography, retrospective). Same paper, labels, tapes,
+   sheet and masks as the hero shelf. */
 
 .inner {
   padding: 132px 32px 72px;
@@ -6,9 +7,11 @@
   margin: 0 auto;
 }
 
-.inner .topbar {
+.inner-page .topbar {
   background: linear-gradient(to bottom, var(--paper) 70%, rgba(237, 235, 230, 0));
 }
+
+/* ---------- page head ---------- */
 
 .page-head {
   display: grid;
@@ -19,6 +22,11 @@
   border-bottom: 1px solid var(--rule);
 }
 
+.page-head__kicker {
+  color: var(--cobalt);
+  margin-bottom: 14px;
+}
+
 .page-head__title {
   font-family: var(--serif);
   font-weight: 400;
@@ -26,11 +34,6 @@
   line-height: 0.95;
   letter-spacing: -0.03em;
   padding-bottom: 0.06em;
-}
-
-.page-head__kicker {
-  color: var(--cobalt);
-  margin-bottom: 14px;
 }
 
 .page-head__lede {
@@ -50,12 +53,7 @@
   max-width: 46ch;
 }
 
-/* Masked rise for page-head lines (runs once on load). */
-.rise > * {
-  display: block;
-}
-
-/* ---------- films index ---------- */
+/* ---------- decade filters (same sliding cobalt block as the hero tabs) ---------- */
 
 .filters {
   position: relative;
@@ -71,6 +69,7 @@
   border: 1px solid var(--rule);
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
   transition: color 0.45s var(--ease);
 }
 
@@ -93,9 +92,17 @@
     transform 0.6s var(--ease);
 }
 
+.count {
+  color: var(--muted);
+  margin: 14px 0 4px;
+}
+
+/* ---------- rows with a turning tape ---------- */
+
 .index {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .row {
@@ -106,41 +113,54 @@
   display: none;
 }
 
-.row a {
+.row__btn {
+  --H: clamp(120px, 10.5vw, 150px);
+  width: 100%;
   display: grid;
-  grid-template-columns: 28px 64px minmax(0, 1fr) minmax(0, 240px) 140px 70px;
+  grid-template-columns: calc(var(--H) * 0.527 + 56px) 120px minmax(0, 1fr) minmax(0, 220px);
   gap: 24px;
   align-items: center;
-  padding: 18px 0;
-  text-decoration: none;
+  padding: 0;
+  text-align: left;
 }
 
-.row__spine {
-  width: 22px;
-  height: 128px;
-  border-radius: 2px;
-  background-repeat: no-repeat;
-  transform: translateY(0);
-  transition: transform 0.5s var(--ease);
+.row__slot {
+  position: relative;
+  display: block;
+  height: calc(var(--H) + 44px);
+  perspective: calc(var(--H) * 5.3);
 }
 
-.row a:hover .row__spine,
-.row a:focus-visible .row__spine {
-  transform: translateY(-8px);
+.row__stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
 }
 
-.row__year {
+.row__year,
+.row__when {
   font-family: var(--sans);
   font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.08em;
+  line-height: 1.5;
+}
+
+.row__text {
+  display: grid;
+  gap: 8px;
 }
 
 .row__title {
   font-family: var(--serif);
-  font-size: clamp(26px, 3vw, 40px);
-  line-height: 1.05;
+  font-weight: 400;
+  font-size: clamp(28px, 3.2vw, 44px);
+  line-height: 1.08;
   letter-spacing: -0.015em;
+  padding-bottom: 0.06em;
 }
 
 .row__sub {
@@ -148,43 +168,38 @@
   font-weight: 500;
 }
 
-.row__genre,
-.row__min {
-  color: var(--muted);
-}
-
-.row__min {
+.row__end {
+  justify-self: end;
   text-align: right;
 }
 
-/* Cover that follows the cursor over the index (fine pointers). */
-.peek {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 35;
-  width: 190px;
-  aspect-ratio: 474 / 900;
-  margin: -180px 0 0 -95px;
-  pointer-events: none;
-  background-repeat: no-repeat;
-  border-radius: 2px;
-  box-shadow: 0 30px 60px -28px rgba(20, 16, 10, 0.55);
-  clip-path: inset(50% 50% 50% 50% round 2px);
-  transition: clip-path 0.5s var(--ease);
+.row__meta {
+  color: var(--muted);
 }
 
-.peek.is-on {
-  clip-path: inset(0 0 0 0 round 2px);
+.row__tag {
+  color: var(--cobalt);
+  border-color: var(--cobalt);
 }
 
-/* ---------- biography ---------- */
+/* ---------- retrospective weeks ---------- */
+
+.week {
+  margin-top: 44px;
+}
+
+.week__head {
+  margin: 0 0 8px;
+  font: inherit;
+}
+
+/* ---------- biography decades ---------- */
 
 .decade {
   display: grid;
   grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
   gap: 48px;
-  padding: 56px 0;
+  padding: 64px 0;
   border-bottom: 1px solid var(--rule);
 }
 
@@ -196,9 +211,11 @@
 
 .decade__year {
   font-family: var(--serif);
+  font-weight: 400;
   font-size: clamp(56px, 7vw, 96px);
-  line-height: 0.9;
+  line-height: 0.92;
   letter-spacing: -0.03em;
+  padding-bottom: 0.04em;
 }
 
 .decade__name {
@@ -208,7 +225,8 @@
 
 .decade__body {
   display: grid;
-  gap: 28px;
+  gap: 24px;
+  min-width: 0;
 }
 
 .decade__body p {
@@ -218,41 +236,76 @@
   max-width: 60ch;
 }
 
-.plates {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.plate {
-  width: 150px;
-  text-decoration: none;
-}
-
-.plate__img {
-  aspect-ratio: 474 / 900;
-  border-radius: 2px;
-  background-repeat: no-repeat;
-  box-shadow: 0 24px 40px -26px rgba(20, 16, 10, 0.55);
-  transform: rotate(0deg);
-  transition: transform 0.5s var(--ease);
-}
-
-.plate:hover .plate__img,
-.plate:focus-visible .plate__img {
-  transform: rotate(-4.5deg) translateY(-6px);
-}
-
-.plate__cap {
+/* A small shelf of the decade's tapes, scrubbed by scroll. */
+.mini {
+  --H: clamp(200px, 22vw, 300px);
+  position: relative;
+  height: calc(var(--H) + 150px);
+  perspective: calc(var(--H) * 5.3);
   margin-top: 12px;
-  display: grid;
-  gap: 6px;
 }
 
-.plate__title {
+.mini__stage {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--H) / 2 + 30px);
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+}
+
+.mini__cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.mini__cap .cap {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  text-align: center;
+}
+
+.mini__cap .cap > span {
+  display: block;
+  white-space: nowrap;
+}
+
+.mini__cap .cap > span:not(.cap__sizer) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.cap__sizer {
+  visibility: hidden;
+}
+
+.mini__title {
   font-family: var(--serif);
-  font-size: 17px;
-  line-height: 1.2;
+  font-size: 26px;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.mini__meta {
+  color: var(--cobalt);
+  font-weight: 500;
+}
+
+.mini__open {
+  pointer-events: auto;
+  margin-top: 6px;
+  color: var(--cobalt);
+  border-color: var(--cobalt);
 }
 
 .facts {
@@ -260,10 +313,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   border-top: 1px solid var(--rule);
   border-left: 1px solid var(--rule);
-  margin-top: 40px;
+  margin: 48px 0 0;
 }
 
-.facts div {
+.facts > div {
   padding: 20px;
   border-right: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
@@ -277,58 +330,7 @@
   margin-top: 12px;
   font-family: var(--serif);
   font-size: 34px;
-  line-height: 1;
-}
-
-/* ---------- retrospective ---------- */
-
-.programme {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 28px;
-}
-
-.programme th {
-  text-align: left;
-  padding: 0 0 12px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--rule);
-}
-
-.programme td {
-  padding: 18px 16px 18px 0;
-  border-bottom: 1px solid var(--rule);
-  vertical-align: baseline;
-}
-
-.programme .when {
-  font-family: var(--sans);
-  font-weight: 500;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-.programme .film a {
-  font-family: var(--serif);
-  font-size: 24px;
-  text-decoration: none;
-}
-
-.programme .film a:hover {
-  color: var(--cobalt);
-}
-
-.programme .note {
-  font-family: var(--serif);
-  font-style: italic;
-  color: var(--muted);
-  font-size: 15px;
-}
-
-.programme .tag {
-  color: var(--cobalt);
-  border-color: var(--cobalt);
+  line-height: 1.05;
 }
 
 /* ---------- mobile ---------- */
@@ -343,85 +345,69 @@
     gap: 16px;
   }
 
-  .row a {
-    grid-template-columns: 22px minmax(0, 1fr) auto;
+  .row__btn {
+    --H: 104px;
+    grid-template-columns: calc(var(--H) * 0.527 + 30px) minmax(0, 1fr);
     grid-template-areas:
-      'spine title year'
-      'spine sub sub'
-      'spine meta meta';
-    gap: 6px 16px;
+      'slot lead'
+      'slot text'
+      'slot end';
+    gap: 4px 16px;
+    align-content: center;
   }
 
-  .row__spine {
-    grid-area: spine;
-    width: 18px;
-    height: 104px;
+  .row__slot {
+    grid-area: slot;
   }
 
-  .row__year {
-    grid-area: year;
+  .row__lead {
+    grid-area: lead;
+    align-self: end;
+  }
+
+  .row__text {
+    grid-area: text;
+    gap: 4px;
+  }
+
+  .row__end {
+    grid-area: end;
+    justify-self: start;
+    text-align: left;
+    align-self: start;
   }
 
   .row__title {
-    grid-area: title;
-  }
-
-  .row__sub {
-    grid-area: sub;
-  }
-
-  .row__genre {
-    grid-area: meta;
-  }
-
-  .row__min {
-    display: none;
-  }
-
-  .row__idx {
-    display: none;
-  }
-
-  .peek {
-    display: none;
+    font-size: 25px;
   }
 
   .decade {
     grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 40px 0;
+    gap: 16px;
+    padding: 44px 0;
   }
 
   .decade__label {
     position: static;
   }
 
-  .plate {
-    width: calc(50% - 10px);
+  .decade__body p {
+    font-size: 17px;
+  }
+
+  .mini {
+    --H: min(48vw, 210px);
+    height: calc(var(--H) + 130px);
+  }
+
+  .mini__title {
+    font-size: 22px;
   }
 
   .facts {
     grid-template-columns: 1fr;
   }
 
-  .programme thead {
-    display: none;
-  }
-
-  .programme tr {
-    display: grid;
-    grid-template-columns: 1fr;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--rule);
-  }
-
-  .programme td {
-    border: 0;
-    padding: 3px 0;
-  }
-}
-
-@media (max-width: 767px) {
   .foot--flow .copy {
     display: none;
   }

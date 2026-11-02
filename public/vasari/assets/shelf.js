@@ -2,20 +2,20 @@
    One requestAnimationFrame loop drives the shelf; the Web Animations API
    drives caption swaps, the paper sheet and text rises. No opacity fades. */
 
-import { FILMS, applyCrop, svgCrop, preloadSheets, reducedMotion } from './data.js'
+import { FILMS, applyCrop, preloadSheets, reducedMotion } from './data.js'
+import { createDetail } from './detail.js'
+import './transition.js'
 import { setCursorState } from './common.js'
 
 const N = FILMS.length // 12
 const COPIES = 3
 const TOTAL = N * COPIES // 36
 const EASE = 'cubic-bezier(.2,.8,.2,1)'
-const SHEET_EASE = 'cubic-bezier(.76,0,.18,1)'
 
 const $ = (s, r = document) => r.querySelector(s)
 const stage = $('#stage')
 const shelf = $('.shelf')
 const play = $('.play')
-const detail = $('#detail')
 const page = $('#page')
 const tabs = [...document.querySelectorAll('.tab')]
 const ind = $('.tabs__ind')
@@ -172,7 +172,6 @@ $('.arrow--next').addEventListener('click', () => (T = Math.round(T) + 1))
 play.addEventListener('click', () => openDetail())
 
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && isOpen) return closeDetail()
   if (isOpen) return
   if (e.key === 'ArrowLeft') T = Math.round(T) - 1
   else if (e.key === 'ArrowRight') T = Math.round(T) + 1
@@ -306,114 +305,27 @@ function frame(now) {
   requestAnimationFrame(frame)
 }
 
-// ---------- detail: paper sheet + ink ----------
-const dImage = $('#d-image')
-const blobs = [...document.querySelectorAll('#blobs circle')]
-const textMasks = [...detail.querySelectorAll('.detail__text .mask > *')]
-let inkRaf = 0
-let lastFocus = null
-
+// ---------- detail: paper sheet + ink (shared module) ----------
 function activeCoverRect() {
   const v = tapes.reduce((best, t) => (Math.abs(relIndex(t.v)) < Math.abs(relIndex(best.v)) ? t : best), tapes[0])
   return v.cv.getBoundingClientRect()
 }
 
-function insetFor(r) {
-  const top = Math.max(0, r.top)
-  const left = Math.max(0, r.left)
-  const right = Math.max(0, window.innerWidth - r.right)
-  const bottom = Math.max(0, window.innerHeight - r.bottom)
-  return `inset(${top}px ${right}px ${bottom}px ${left}px round 3px)`
-}
+const detailSheet = createDetail({
+  root: page,
+  fallbackFocus: play,
+  onClose: () => {
+    isOpen = false
+  },
+})
 
 function openDetail() {
   if (isOpen) return
   T = Math.round(T)
   s = T
-  const f = FILMS[mod(Math.round(T), N)]
-  $('#d-sub').textContent = `${f.romaji} / ${f.kanji}`
-  $('#d-title').textContent = f.title
-  $('#d-meta').textContent = `${f.year} / ${f.genre} / ${f.min} min`
-  $('#d-syn').textContent = f.synopsis
-  $('#d-note').textContent = ''
-  const c = svgCrop(`cover-${f.id}`)
-  dImage.setAttribute('href', c.href)
-  dImage.setAttribute('x', c.x)
-  dImage.setAttribute('y', c.y)
-  dImage.setAttribute('width', c.width)
-  dImage.setAttribute('height', c.height)
-  blobs.forEach((b) => b.setAttribute('r', 0))
-
-  const rect = activeCoverRect()
   isOpen = true
-  lastFocus = document.activeElement
-  page.inert = true
-  detail.getAnimations({ subtree: true }).forEach((a) => a.cancel())
-  detail.classList.add('is-open')
-  detail.scrollTop = 0
-  detail.style.transformOrigin = `${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px`
-  const dur = RM ? 1 : 1050
-  detail.animate(
-    [
-      { clipPath: insetFor(rect), transform: 'rotate(-4.5deg)' },
-      { clipPath: 'inset(0px 0px 0px 0px round 0px)', transform: 'rotate(0deg)' },
-    ],
-    { duration: dur, easing: SHEET_EASE, fill: 'both' },
-  )
-  textMasks.forEach((el, i) =>
-    el.animate([{ transform: 'translateY(110%)' }, { transform: 'translateY(0)' }], {
-      duration: RM ? 1 : 900,
-      delay: RM ? 0 : 620 + i * 75,
-      easing: EASE,
-      fill: 'both',
-    }),
-  )
-  startInk()
-  $('.detail__close').focus({ preventScroll: true })
+  detailSheet.open(FILMS[mod(Math.round(T), N)].id, activeCoverRect)
 }
-
-function startInk() {
-  cancelAnimationFrame(inkRaf)
-  const t0 = performance.now() + (RM ? -5000 : 520)
-  const step = (now) => {
-    const t = now - t0
-    blobs.forEach((b) => {
-      const p = Math.min(1, Math.max(0, (t - Number(b.dataset.delay)) / 1250))
-      b.setAttribute('r', (720 * (1 - (1 - p) ** 3)).toFixed(1))
-    })
-    if (t < 2400) inkRaf = requestAnimationFrame(step)
-  }
-  inkRaf = requestAnimationFrame(step)
-}
-
-function closeDetail() {
-  if (!isOpen) return
-  const rect = activeCoverRect()
-  const anim = detail.animate(
-    [
-      { clipPath: 'inset(0px 0px 0px 0px round 0px)', transform: 'rotate(0deg)' },
-      { clipPath: insetFor(rect), transform: 'rotate(-4.5deg)' },
-    ],
-    { duration: RM ? 1 : 850, easing: SHEET_EASE, fill: 'both' },
-  )
-  anim.onfinish = () => {
-    detail.classList.remove('is-open')
-    detail.getAnimations({ subtree: true }).forEach((a) => a.cancel())
-    cancelAnimationFrame(inkRaf)
-    isOpen = false
-    page.inert = false
-    ;(lastFocus && lastFocus !== document.body ? lastFocus : play).focus({ preventScroll: true })
-  }
-}
-
-$('.detail__close').addEventListener('click', closeDetail)
-
-// Leon Vasari is fictional: say so instead of pretending to stream anything.
-$('#d-watch').addEventListener('click', () => {
-  const note = $('#d-note')
-  note.textContent = 'Leon Vasari and his films are fictional, so there is no film to watch. This site is a design study.'
-  if (!RM) note.animate([{ transform: 'translateY(110%)' }, { transform: 'translateY(0)' }], { duration: 650, easing: EASE })
-})
 
 // ---------- start ----------
 measure()
