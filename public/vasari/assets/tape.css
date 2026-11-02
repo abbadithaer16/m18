@@ -1,0 +1,44 @@
+/* VHS tape cuboid (shared by every page). A .tape sits at its container's
+   origin; --H, --ws and --d come from the nearest ancestor. */
+
+.tape {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.face {
+  position: absolute;
+  top: calc(var(--H) / -2);
+  height: var(--H);
+  backface-visibility: hidden;
+  border-radius: 2px;
+  background-repeat: no-repeat;
+}
+
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  opacity: var(--shade, 0);
+  pointer-events: none;
+}
+
+.sp {
+  width: var(--ws);
+  left: calc(var(--ws) / -2);
+  transform: translateZ(calc(var(--d) / 2));
+}
+
+.cv {
+  width: var(--d);
+  left: calc(var(--d) / -2);
+  transform: rotateY(90deg) translateZ(calc(var(--ws) / 2));
+  box-shadow: 0 30px 60px -28px rgba(20, 16, 10, 0.55);
+}

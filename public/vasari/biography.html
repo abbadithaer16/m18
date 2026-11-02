@@ -6,17 +6,21 @@
     <meta name="theme-color" content="#edebe6" />
     <meta name="description" content="The career of Leon Vasari, a fictional film director, decade by decade." />
     <title>Biography — Leon Vasari</title>
+    <script>document.documentElement.classList.add("js");try{if(sessionStorage.getItem("vasari-sheet")){document.documentElement.classList.add("sheet-pending");setTimeout(function(){document.documentElement.classList.remove("sheet-pending")},2500)}}catch(e){}</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&amp;display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&amp;display=swap&amp;text=%E3%80%9C%E3%81%84%E3%81%8B%E3%81%8F%E3%81%98%E3%81%99%E3%81%9F%E3%81%A1%E3%81%A6%E3%81%AA%E3%81%AE%E3%81%B9%E3%82%8B%E3%82%92%E4%B8%8A%E4%BA%89%E4%BD%9C%E5%88%BB%E5%8D%88%E5%93%81%E5%A1%A9%E5%A4%8F%E5%AF%9F%E5%B5%90%E5%B7%9D%E5%B9%B4%E5%BE%8C%E6%88%A6%E6%88%BB%E6%89%89%E6%98%82%E6%98%A0%E6%9C%80%E6%AD%A3%E6%AD%B4%E6%BD%AE%E7%81%AF%E7%81%B0%E7%89%B9%E7%93%A6%E7%94%BB%E7%9B%A3%E7%9D%A3%E7%B5%8C%E7%B7%91%E8%80%85%E8%8E%B1%E8%90%A8%E8%90%BD%E8%A6%8B%E8%A6%B3%E8%B0%B7%E8%B5%A4%E9%81%93%E9%87%8C%E9%95%B7%E9%96%89%E9%96%8B%E9%9B%86%E9%9D%92%E9%9D%99%E9%B3%A5" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&amp;display=swap&amp;text=%E8%8E%B1%E6%98%82%C2%B7%E7%93%A6%E8%90%A8%E9%87%8C" />
     <link rel="stylesheet" href="./assets/vasari.css" />
+    <link rel="stylesheet" href="./assets/tape.css" />
+    <link rel="stylesheet" href="./assets/detail.css" />
     <link rel="stylesheet" href="./assets/pages.css" />
     <script type="module" src="./assets/pages.js"></script>
   </head>
-  <body>
+  <body class="inner-page">
     <div class="grain" aria-hidden="true"></div>
+    <div id="page">
     <header class="topbar">
       <a class="lbl box back" href="./">Back / 戻る</a>
       <a class="logo" href="./" aria-label="Leon Vasari, filmography shelf">
@@ -27,63 +31,91 @@
     </header>
     <main class="inner">
       <div class="page-head">
-        <div class="rise">
-          <span class="mask"><span class="lbl page-head__kicker">Biography / 経歴</span></span>
-          <span class="mask"><h1 class="page-head__title">Leon Vasari</h1></span>
+        <div>
+          <div class="reveal"><p class="lbl page-head__kicker">Biography / 経歴</p></div>
+          <div class="reveal"><h1 class="page-head__title">Leon Vasari</h1></div>
         </div>
-        <div class="rise">
-          <span class="mask"><p class="page-head__lede">Director, 1958 to 1989. Twelve features, most of them about people waiting for something that does not arrive: a boat, a letter, a reason.</p></span>
-          <span class="mask"><p class="fiction">Leon Vasari is a fictional director. This biography, his films and their dates are invented for a design study.</p></span>
+        <div>
+          <div class="reveal"><p class="page-head__lede">Director, 1958 to 1989. Twelve features, most of them about people waiting for something that does not arrive: a boat, a letter, a reason.</p></div>
+          <div class="reveal"><p class="fiction">Leon Vasari is a fictional director. This biography, his films and their dates are invented for a design study.</p></div>
         </div>
       </div>
       <section class="decade" aria-labelledby="d1950">
         <div class="decade__label">
-          <h2 class="decade__year" id="d1950">1950s</h2>
-          <p class="lbl decade__name">Beginnings</p>
+          <div class="reveal"><h2 class="decade__year" id="d1950">1950s</h2></div>
+          <div class="reveal"><p class="lbl decade__name">Beginnings</p></div>
         </div>
         <div class="decade__body">
-          <p>Vasari grew up between a port town and a mountain village, and spent his twenties writing subtitles for other people&rsquo;s films. He learned editing by cutting their translations to fit the picture.</p>
-          <p>His first feature, <em>The Silent Valley</em>, was shot in thirty-one days with a borrowed camera and a cast of schoolteachers. It set the pattern for the next three decades: small places, long silences, and a secret everyone already knows.</p>
-          <div class="plates" data-films="valley"></div>
+          <div class="reveal"><p>Vasari grew up between a port town and a mountain village, and spent his twenties writing subtitles for other people&rsquo;s films. He learned editing by cutting their translations to fit the picture.</p></div>
+          <div class="reveal"><p>His first feature, <em>The Silent Valley</em>, was shot in thirty-one days with a borrowed camera and a cast of schoolteachers. It set the pattern for the next three decades: small places, long silences, and a secret everyone already knows.</p></div>
+          <div class="mini" data-films="valley" role="group" aria-label="Films of the 1950s">
+            <div class="mini__stage"></div>
+            <div class="mini__cap">
+              <div class="cap mini__title" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <div class="cap lbl mini__meta" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <button class="lbl box mini__open" type="button">Open / 開く</button>
+            </div>
+          </div>
         </div>
       </section>
       <section class="decade" aria-labelledby="d1960">
         <div class="decade__label">
-          <h2 class="decade__year" id="d1960">1960s</h2>
-          <p class="lbl decade__name">Water and fire</p>
+          <div class="reveal"><h2 class="decade__year" id="d1960">1960s</h2></div>
+          <div class="reveal"><p class="lbl decade__name">Water and fire</p></div>
         </div>
         <div class="decade__body">
-          <p>Through the sixties Vasari followed water. A harbour at dusk in <em>The Blue Hour</em>, a salt barge on a dying river, a village waiting for a dam to drown it.</p>
-          <p>He began working with the same small crew he would keep for the rest of his career, and with a cinematographer who refused to light anything that the sun could not.</p>
-          <div class="plates" data-films="bluehour river summer green"></div>
+          <div class="reveal"><p>Through the sixties Vasari followed water. A harbour at dusk in <em>The Blue Hour</em>, a salt barge on a dying river, a village waiting for a dam to drown it.</p></div>
+          <div class="reveal"><p>He began working with the same small crew he would keep for the rest of his career, and with a cinematographer who refused to light anything that the sun could not.</p></div>
+          <div class="mini" data-films="bluehour river summer green" role="group" aria-label="Films of the 1960s">
+            <div class="mini__stage"></div>
+            <div class="mini__cap">
+              <div class="cap mini__title" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <div class="cap lbl mini__meta" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <button class="lbl box mini__open" type="button">Open / 開く</button>
+            </div>
+          </div>
         </div>
       </section>
       <section class="decade" aria-labelledby="d1970">
         <div class="decade__label">
-          <h2 class="decade__year" id="d1970">1970s</h2>
-          <p class="lbl decade__name">The long middle</p>
+          <div class="reveal"><h2 class="decade__year" id="d1970">1970s</h2></div>
+          <div class="reveal"><p class="lbl decade__name">The long middle</p></div>
         </div>
         <div class="decade__body">
-          <p>His most productive decade. <em>Noon in Ashes</em> turned a western into a ghost story; <em>The Observer</em> made a thriller out of a building that never moves.</p>
-          <p><em>Light in the Storm</em>, at two hours seven minutes, is his longest film and the one he said he would keep if he could keep only one.</p>
-          <div class="plates" data-films="noon observer birds storm"></div>
+          <div class="reveal"><p>His most productive decade. <em>Noon in Ashes</em> turned a western into a ghost story; <em>The Observer</em> made a thriller out of a building that never moves.</p></div>
+          <div class="reveal"><p><em>Light in the Storm</em>, at two hours seven minutes, is his longest film and the one he said he would keep if he could keep only one.</p></div>
+          <div class="mini" data-films="noon observer birds storm" role="group" aria-label="Films of the 1970s">
+            <div class="mini__stage"></div>
+            <div class="mini__cap">
+              <div class="cap mini__title" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <div class="cap lbl mini__meta" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <button class="lbl box mini__open" type="button">Open / 開く</button>
+            </div>
+          </div>
         </div>
       </section>
       <section class="decade" aria-labelledby="d1980">
         <div class="decade__label">
-          <h2 class="decade__year" id="d1980">1980s</h2>
-          <p class="lbl decade__name">Last reels</p>
+          <div class="reveal"><h2 class="decade__year" id="d1980">1980s</h2></div>
+          <div class="reveal"><p class="lbl decade__name">Last reels</p></div>
         </div>
         <div class="decade__body">
-          <p>In the eighties his films grew quieter and stranger. <em>A Quiet War</em> is the only comedy he made, about a feud nobody can explain.</p>
-          <p>He ended with <em>Red Door</em>, a film about the last night of a cinema, and then stopped. He never announced a retirement; he simply did not start another film.</p>
-          <div class="plates" data-films="tide war door"></div>
+          <div class="reveal"><p>In the eighties his films grew quieter and stranger. <em>A Quiet War</em> is the only comedy he made, about a feud nobody can explain.</p></div>
+          <div class="reveal"><p>He ended with <em>Red Door</em>, a film about the last night of a cinema, and then stopped. He never announced a retirement; he simply did not start another film.</p></div>
+          <div class="mini" data-films="tide war door" role="group" aria-label="Films of the 1980s">
+            <div class="mini__stage"></div>
+            <div class="mini__cap">
+              <div class="cap mini__title" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <div class="cap lbl mini__meta" aria-hidden="true"><span class="cap__sizer">Ag</span></div>
+              <button class="lbl box mini__open" type="button">Open / 開く</button>
+            </div>
+          </div>
         </div>
       </section>
       <dl class="facts">
-        <div><dt class="lbl">Features</dt><dd>12</dd></div>
-        <div><dt class="lbl">Active</dt><dd>1958&ndash;1989</dd></div>
-        <div><dt class="lbl">Longest</dt><dd>127 min</dd></div>
+        <div><dt class="lbl">Features</dt><dd class="reveal"><span>12</span></dd></div>
+        <div><dt class="lbl">Active</dt><dd class="reveal"><span>1958&ndash;1989</span></dd></div>
+        <div><dt class="lbl">Longest</dt><dd class="reveal"><span>127 min</span></dd></div>
       </dl>
     </main>
     <footer class="foot foot--flow">
@@ -96,6 +128,7 @@
       </nav>
       <span class="lbl">A fictional director</span>
     </footer>
+    </div>
     <div class="cursor" aria-hidden="true">
       <span class="cursor__ring"></span>
       <span class="cursor__dot"></span>

@@ -1,0 +1,143 @@
+/* Film detail: the paper sheet that grows out of a cover (every page). */
+
+.detail {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  visibility: hidden;
+  background: var(--sheet);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4vw;
+  padding: 110px 6vw 56px 7vw;
+  align-items: center;
+}
+
+.detail.is-open {
+  visibility: visible;
+}
+
+.detail__close {
+  position: absolute;
+  left: 32px;
+  top: 31px;
+}
+
+.detail__band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 84px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.detail__text {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 520px;
+  justify-self: end;
+  width: 100%;
+}
+
+.d-sub {
+  color: var(--cobalt);
+}
+
+.d-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(44px, 5.4vw, 84px);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  padding-bottom: 0.08em;
+}
+
+.d-meta {
+  color: var(--muted);
+}
+
+.d-syn {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  max-width: 42ch;
+}
+
+.d-credit {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.d-watch {
+  height: 44px;
+  margin-top: 10px;
+  padding: 0 20px;
+  border: 1px solid var(--cobalt);
+  color: var(--cobalt);
+  display: inline-flex !important;
+  align-items: center;
+  width: max-content;
+}
+
+.d-note {
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 12px;
+  min-height: 1px;
+}
+
+.detail__poster {
+  height: min(100%, 78vh);
+  aspect-ratio: 474 / 900;
+  justify-self: start;
+}
+
+.detail__poster svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 767px) {
+  .detail {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 24px;
+    padding: 84px 22px 40px;
+    overflow-y: auto;
+  }
+
+  .detail__close {
+    left: 16px;
+    top: 21px;
+  }
+
+  .detail__band {
+    height: 64px;
+  }
+
+  .detail__poster {
+    order: -1;
+    height: 46svh;
+    justify-self: center;
+  }
+
+  .detail__text {
+    justify-self: stretch;
+  }
+
+  .d-title {
+    font-size: 42px;
+  }
+
+  .d-syn {
+    font-size: 16px;
+  }
+}
