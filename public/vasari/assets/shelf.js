@@ -2,14 +2,14 @@
    One requestAnimationFrame loop drives the shelf; the Web Animations API
    drives caption swaps, the paper sheet and text rises. No opacity fades. */
 
-import { FILMS, applyCrop, preloadSheets, reducedMotion } from './data.js'
+import { SHELF as ITEMS, applyCrop, preloadSheets, reducedMotion } from './data.js'
 import { createDetail } from './detail.js'
 import './transition.js'
 import { setCursorState } from './common.js'
 
-const N = FILMS.length // 12
+const N = ITEMS.length // 12 films + 3 books
 const COPIES = 3
-const TOTAL = N * COPIES // 36
+const TOTAL = N * COPIES
 const EASE = 'cubic-bezier(.2,.8,.2,1)'
 
 const $ = (s, r = document) => r.querySelector(s)
@@ -53,13 +53,19 @@ function measure() {
   VH = window.innerHeight
   stage.style.setProperty('--ws', `${ws}px`)
   stage.style.setProperty('--d', `${d}px`)
+  dMax = H * Math.max(...ITEMS.map((f) => f.aspect))
+  tapes.forEach((t) => t.el.style.setProperty('--d', `${dOf(t.i)}px`))
   placeIndicator()
 }
+
+// Cover width of item i (= depth of its box). A book's cover is wider than a VHS box.
+const dOf = (i) => H * ITEMS[i].aspect
+let dMax = 0
 
 // ---------- tapes ----------
 const tapes = []
 for (let v = 0; v < TOTAL; v++) {
-  const film = FILMS[v % N]
+  const film = ITEMS[v % N]
   const el = document.createElement('div')
   el.className = 'tape'
   el.dataset.v = v
@@ -83,7 +89,7 @@ for (let v = 0; v < TOTAL; v++) {
 // ---------- state ----------
 const fromHash = () => {
   const id = decodeURIComponent(location.hash.slice(1)).split('&')[0]
-  const i = FILMS.findIndex((f) => f.id === id)
+  const i = ITEMS.findIndex((f) => f.id === id)
   return i < 0 ? 5 : i // opens on Noon in Ashes
 }
 // Read deep-link flags before the first frame rewrites the hash.
@@ -104,7 +110,11 @@ let last = performance.now()
 
 const relIndex = (v) => mod(v - s + TOTAL / 2, TOTAL) - TOTAL / 2
 const B = (r) => (Math.abs(r) < 1 ? (r + Math.sin(Math.PI * r) / Math.PI) / 2 : Math.sign(r) * 0.5)
-const F = (r) => r * (ws + gap) + (d - ws + 1.6 * gap) * B(r)
+// ex = how far the open item pushes its neighbours apart. It depends on the
+// open item's cover width, so it is blended between the two items nearest the
+// centre while the shelf moves (exact once it settles).
+const extraOf = (i) => dOf(i) - ws + 1.6 * gap
+const F = (r, ex) => r * (ws + gap) + ex * B(r)
 
 // ---------- caption ----------
 function swapLine(mask, html, dir) {
@@ -128,11 +138,13 @@ function swapLine(mask, html, dir) {
 
 function setActive(i, dir) {
   active = i
-  const f = FILMS[i]
+  const f = ITEMS[i]
+  const book = f.kind === 'book'
   swapLine(caps.title, f.title, dir)
-  swapLine(caps.sub, `${f.romaji} / ${f.kanji}`, dir)
+  caps.title.lastElementChild.classList.toggle('is-long', f.title.length > 26)
+  swapLine(caps.sub, book ? `${f.author} / 本` : `${f.romaji} / ${f.kanji}`, dir)
   swapLine(caps.year, String(f.year), dir)
-  announce.textContent = `${f.title}, ${f.year}`
+  announce.textContent = book ? `${f.title}, a book by ${f.author}, ${f.year}` : `${f.title}, ${f.year}`
   placeIndicator()
   if (history.replaceState) history.replaceState(null, '', `#${f.id}`)
 }
@@ -140,8 +152,9 @@ function setActive(i, dir) {
 // ---------- decade tabs ----------
 function placeIndicator() {
   if (active < 0) return
-  const dec = Math.floor(FILMS[active].year / 10) * 10
-  const tab = tabs.find((t) => t.dataset.decade === String(dec))
+  const f = ITEMS[active]
+  const key = f.kind === 'book' ? 'books' : String(Math.floor(f.year / 10) * 10)
+  const tab = tabs.find((t) => t.dataset.decade === key)
   tabs.forEach((t) => t.classList.toggle('is-active', t === tab))
   if (!tab) return
   ind.style.width = `${tab.offsetWidth}px`
@@ -151,7 +164,12 @@ function placeIndicator() {
 tabs.forEach((tab) =>
   tab.addEventListener('click', () => {
     const dec = tab.dataset.decade
-    const j = dec === 'all' ? 0 : FILMS.findIndex((f) => Math.floor(f.year / 10) * 10 === Number(dec))
+    const j =
+      dec === 'all'
+        ? 0
+        : dec === 'books'
+          ? ITEMS.findIndex((f) => f.kind === 'book')
+          : ITEMS.findIndex((f) => f.kind === 'film' && Math.floor(f.year / 10) * 10 === Number(dec))
     const cur = Math.round(T)
     let delta = mod(j - cur, N)
     if (delta > N / 2) delta -= N
@@ -260,18 +278,22 @@ function frame(now) {
   // Tilt towards the cursor.
   const cy = VH / 2
   const settled = Math.abs(T - s) < 0.3
-  onCover = !isOpen && settled && Math.abs(mx - W / 2) < 0.55 * d && Math.abs(my - cy) < 0.55 * H
-  const ty = onCover ? ((mx - W / 2) / (0.55 * d)) * 9 : ((mx - W / 2) / W) * 5
+  const dA = dOf(a) // the open item's cover width
+  onCover = !isOpen && settled && Math.abs(mx - W / 2) < 0.55 * dA && Math.abs(my - cy) < 0.55 * H
+  const ty = onCover ? ((mx - W / 2) / (0.55 * dA)) * 9 : ((mx - W / 2) / W) * 5
   const tx = onCover ? (-(my - cy) / (H / 2)) * 6 : 0
   const kt = RM ? 1 : 1 - Math.exp(-7 * dt)
   tiltY += (ty - tiltY) * kt
   tiltX += (tx - tiltX) * kt
 
   const kl = RM ? 1 : 1 - Math.exp(-12 * dt)
-  const limit = W / 2 + 1.5 * d
+  const limit = W / 2 + 1.5 * dMax
+  const fl = Math.floor(s)
+  const fr = s - fl
+  const ex = extraOf(mod(fl, N)) * (1 - fr) + extraOf(mod(fl + 1, N)) * fr
   for (const t of tapes) {
     const r = relIndex(t.v)
-    const x = F(r)
+    const x = F(r, ex)
     if (Math.abs(x) > limit) {
       if (t.el.style.visibility !== 'hidden') t.el.style.visibility = 'hidden'
       continue
@@ -291,7 +313,7 @@ function frame(now) {
 
   // Play ring: pops in once the shelf settles.
   const ps = isOpen ? 0 : smooth(Math.max(0, 1 - Math.abs(T - s) * 3))
-  play.style.left = `${W / 2 - 0.5 * d - 6}px`
+  play.style.left = `${W / 2 - 0.5 * dA - 6}px`
   play.style.top = `${cy + 0.36 * H}px`
   play.style.transform = `scale(${ps})`
   play.style.pointerEvents = ps > 0.5 ? 'auto' : 'none'
@@ -324,7 +346,7 @@ function openDetail() {
   T = Math.round(T)
   s = T
   isOpen = true
-  detailSheet.open(FILMS[mod(Math.round(T), N)].id, activeCoverRect)
+  detailSheet.open(ITEMS[mod(Math.round(T), N)].id, activeCoverRect)
 }
 
 // ---------- start ----------

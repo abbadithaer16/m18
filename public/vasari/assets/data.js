@@ -46,6 +46,31 @@ export const FILMS = [
   { id: 'door', title: 'Red Door', romaji: 'AKAI TOBIRA', kanji: '赤い扉', year: 1989, genre: 'Thriller', min: 114, synopsis: 'A projectionist follows a reel of unknown film through the corridors of a cinema on its final night.' },
 ]
 
+// Real books shelved among the films on the home shelf. They are not Vasari
+// films: the caption and detail show their author instead. Covers are
+// straightened from the owner's photos of each book; spines are drawn in each
+// cover's colours (public/vasari/assets/books/).
+const FILM_ASPECT = 474 / 900 // cover width / height of a VHS box
+const BOOK_ASPECT = 0.66
+FILMS.forEach((f) => Object.assign(f, { kind: 'film', aspect: FILM_ASPECT }))
+
+export const BOOKS = [
+  { id: 'habits', title: 'The 7 Habits of Highly Effective People', author: 'Stephen R. Covey', year: 1989, genre: 'Self-help', synopsis: 'Covey sets out seven habits for personal and working life, arranged as a path from depending on others, to standing on your own, to working well with other people.' },
+  { id: 'power', title: 'The 48 Laws of Power', author: 'Robert Greene', year: 1998, genre: 'Non-fiction', synopsis: 'Forty-eight rules about how power is won, kept and lost, each one told through episodes from history, from royal courts to swindlers.' },
+  { id: 'seduction', title: 'The Art of Seduction', author: 'Robert Greene', year: 2001, genre: 'Non-fiction', synopsis: 'Greene treats seduction as a form of power, sorting famous seducers from history into types and tracing the steps of their campaigns.' },
+].map((b) => ({ ...b, kind: 'book', aspect: BOOK_ASPECT }))
+
+/** Everything on the home shelf, in order: the twelve films, then the books. */
+export const SHELF = [...FILMS, ...BOOKS]
+
+const BOOK_DIR = new URL('./books/', import.meta.url).href
+for (const b of BOOKS) {
+  SHEET[`book-cover-${b.id}`] = [`${BOOK_DIR}cover-${b.id}.webp`, 660, 1000]
+  SHEET[`book-spine-${b.id}`] = [`${BOOK_DIR}spine-${b.id}.webp`, 284, 1680]
+  CROP[`cover-${b.id}`] = [`book-cover-${b.id}`, 0, 0, 660, 1000]
+  CROP[`spine-${b.id}`] = [`book-spine-${b.id}`, 0, 0, 284, 1680]
+}
+
 export const DECADES = [1950, 1960, 1970, 1980]
 
 /** Background CSS that stretches crop box `key` to fill an element exactly. */
@@ -55,7 +80,8 @@ export function cropStyle(key) {
   return {
     backgroundImage: `url("${url}")`,
     backgroundSize: `${(W / w) * 100}% ${(H / h) * 100}%`,
-    backgroundPosition: `${(x / (W - w)) * 100}% ${(y / (H - h)) * 100}%`,
+    // A crop that is the whole image has no room to move (W === w): pin it at 0.
+    backgroundPosition: `${W === w ? 0 : (x / (W - w)) * 100}% ${H === h ? 0 : (y / (H - h)) * 100}%`,
   }
 }
 

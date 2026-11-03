@@ -191,6 +191,12 @@
     font-size: 24px;
   }
 
+  /* Long book titles shrink so the caption still fits a phone. */
+  .cap--title > .is-long {
+    font-size: 18px;
+    line-height: 1.5;
+  }
+
   .arrow--prev {
     left: 6px;
   }
