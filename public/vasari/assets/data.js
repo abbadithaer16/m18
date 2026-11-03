@@ -46,7 +46,7 @@ export const FILMS = [
   { id: 'door', title: 'Red Door', romaji: 'AKAI TOBIRA', kanji: '赤い扉', year: 1989, genre: 'Thriller', min: 114, synopsis: 'A projectionist follows a reel of unknown film through the corridors of a cinema on its final night.' },
 ]
 
-// Real books shelved among the films on the home shelf. They are not Vasari
+// Ten real books shelved after the films on the home shelf. They are not Vasari
 // films: the caption and detail show their author instead. Covers are
 // straightened from the owner's photos of each book; spines are drawn in each
 // cover's colours (public/vasari/assets/books/).
@@ -58,7 +58,17 @@ export const BOOKS = [
   { id: 'habits', title: 'The 7 Habits of Highly Effective People', author: 'Stephen R. Covey', year: 1989, genre: 'Self-help', synopsis: 'Covey sets out seven habits for personal and working life, arranged as a path from depending on others, to standing on your own, to working well with other people.' },
   { id: 'power', title: 'The 48 Laws of Power', author: 'Robert Greene', year: 1998, genre: 'Non-fiction', synopsis: 'Forty-eight rules about how power is won, kept and lost, each one told through episodes from history, from royal courts to swindlers.' },
   { id: 'seduction', title: 'The Art of Seduction', author: 'Robert Greene', year: 2001, genre: 'Non-fiction', synopsis: 'Greene treats seduction as a form of power, sorting famous seducers from history into types and tracing the steps of their campaigns.' },
-].map((b) => ({ ...b, kind: 'book', aspect: BOOK_ASPECT }))
+  { id: 'innergame', title: 'The Inner Game of Tennis', author: 'W. Timothy Gallwey', year: 1974, genre: 'Sport', synopsis: 'Gallwey on the game played inside the head: quieting self-criticism and trusting the body, so that skill can come out on its own.' },
+  { id: 'thinking', title: 'Thinking, Fast and Slow', author: 'Daniel Kahneman', year: 2011, genre: 'Psychology', synopsis: 'Kahneman describes two ways of thinking, one fast and intuitive, one slow and deliberate, and shows how the fast one leads our judgements astray.' },
+  { id: 'grit', title: 'Grit', author: 'Angela Duckworth', year: 2016, genre: 'Psychology', synopsis: 'Duckworth argues that a mix of passion and perseverance, which she calls grit, predicts achievement better than talent does.' },
+  { id: 'rules', title: '12 Rules for Life', author: 'Jordan B. Peterson', year: 2018, genre: 'Self-help', synopsis: 'Peterson sets out twelve principles for living, drawing on psychology, mythology and his own experience, as an antidote to chaos.' },
+  { id: 'money', title: 'The Psychology of Money', author: 'Morgan Housel', year: 2020, genre: 'Finance', synopsis: 'Short chapters on how people really behave with money, and why doing well with it depends more on behaviour than on knowledge.' },
+  { id: 'mountain', title: 'The Mountain Is You', author: 'Brianna Wiest', year: 2020, genre: 'Self-help', synopsis: 'Wiest writes about self-sabotage: why people get in their own way, and how working through it can become a path to self-mastery.' },
+  { id: 'thinkagain', title: 'Think Again', author: 'Adam Grant', year: 2021, genre: 'Psychology', synopsis: 'Grant makes the case for rethinking: questioning your own opinions, opening other minds, and making it normal to change your mind.' },
+]
+  // Shelved in publication order.
+  .sort((a, b) => a.year - b.year)
+  .map((b) => ({ ...b, kind: 'book', aspect: BOOK_ASPECT }))
 
 /** Everything on the home shelf, in order: the twelve films, then the books. */
 export const SHELF = [...FILMS, ...BOOKS]

@@ -39,10 +39,14 @@ are fictional; every page says so. The tape artwork is cropped from four
 MotionSites image sheets loaded from their image proxy, as the prompt
 specifies.
 
-Three real books share the home shelf with the films: *The 7 Habits of
-Highly Effective People* (Stephen R. Covey), *The 48 Laws of Power* and *The
-Art of Seduction* (Robert Greene). Their covers are straightened from the
-owner's photos and their spines are drawn in each cover's colours
+Ten real books share the home shelf with the films, in publication order:
+*The Inner Game of Tennis* (W. Timothy Gallwey), *The 7 Habits of Highly
+Effective People* (Stephen R. Covey), *The 48 Laws of Power* and *The Art of
+Seduction* (Robert Greene), *Thinking, Fast and Slow* (Daniel Kahneman),
+*Grit* (Angela Duckworth), *12 Rules for Life* (Jordan B. Peterson), *The
+Psychology of Money* (Morgan Housel), *The Mountain Is You* (Brianna Wiest)
+and *Think Again* (Adam Grant). Their covers are straightened from the owner's
+photos and their spines are drawn in each cover's colours
 (`public/vasari/assets/books/`). The caption and detail credit the author and
 mark them as real books; the Films, Biography and Retrospective pages stay
 films-only.
