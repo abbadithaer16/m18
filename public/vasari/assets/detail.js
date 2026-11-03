@@ -3,7 +3,7 @@
    rise out of masks and the poster bleeds in as ink blots. Shared by every
    page. No opacity fades. */
 
-import { FILMS, svgCrop, reducedMotion } from './data.js'
+import { SHELF, svgCrop, reducedMotion } from './data.js'
 
 const EASE = 'cubic-bezier(.2,.8,.2,1)'
 const SHEET_EASE = 'cubic-bezier(.76,0,.18,1)'
@@ -100,13 +100,24 @@ export function createDetail({ root, fallbackFocus, onOpen, onClose } = {}) {
 
   function openDetail(filmId, getRect) {
     if (open) return
-    const f = FILMS.find((x) => x.id === filmId)
-    $('#d-sub').textContent = `${f.romaji} / ${f.kanji}`
+    const f = SHELF.find((x) => x.id === filmId)
+    const book = f.kind === 'book'
+    $('#d-sub').textContent = book ? `${f.author} / 本` : `${f.romaji} / ${f.kanji}`
     $('#d-title').textContent = f.title
-    $('#d-meta').textContent = `${f.year} / ${f.genre} / ${f.min} min`
+    $('#d-meta').textContent = book ? `${f.year} / ${f.genre} / Book` : `${f.year} / ${f.genre} / ${f.min} min`
     $('#d-syn').textContent = f.synopsis
     $('#d-note').textContent = ''
-    const c = svgCrop(`cover-${f.id}`)
+    // Books are real (not Vasari films): credit the author, no "Watch the film".
+    $('.d-credit').textContent = book
+      ? `Written by ${f.author}. A real book, shelved beside Leon Vasari’s fictional films.`
+      : 'Written and directed by Leon Vasari. 監督作品'
+    $('#d-watch').parentElement.hidden = book
+    // The poster takes the item's own cover proportions (474 wide in SVG units).
+    const vh = Math.round(474 / f.aspect)
+    detail.querySelector('.detail__poster').style.aspectRatio = `474 / ${vh}`
+    detail.querySelector('.detail__poster svg').setAttribute('viewBox', `0 0 474 ${vh}`)
+    detail.querySelector('#pclip rect').setAttribute('height', vh)
+    const c = svgCrop(`cover-${f.id}`, 474, vh)
     dImage.setAttribute('href', c.href)
     dImage.setAttribute('x', c.x)
     dImage.setAttribute('y', c.y)

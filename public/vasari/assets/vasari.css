@@ -89,6 +89,11 @@ dd {
   color: var(--ink);
 }
 
+/* The hidden attribute always wins over component display rules (e.g. .mask). */
+[hidden] {
+  display: none !important;
+}
+
 /* ---------- labels ---------- */
 
 .lbl {
