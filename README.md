@@ -51,6 +51,30 @@ photos and their spines are drawn in each cover's colours
 mark them as real books; the Films, Biography and Retrospective pages stay
 films-only.
 
+## Fourth site: Mostar City (`/mostar-city/`)
+
+A plain HTML, CSS and JavaScript visitor guide to Mostar (no framework, no
+build step) in `public/mostar-city/`, served at `/m18/mostar-city/`. Built
+from the MotionSites "Mostar Guide" prompt (`mostar-guide`, free tier) and
+extended into four pages: the cinematic scroll intro, the Old Bridge, the
+bazaar and routes out of the city. Every path is relative, so the folder works
+under any subpath, and Vite copies it into `dist/` unchanged.
+
+- **Photographs and pin icons** are the prompt's own assets, converted from
+  PNG to WebP and stored in `public/mostar-city/assets/`. The prompt loads them
+  from a Figma Sites page and a CloudFront bucket and names no licence;
+  MotionSites' Terms of Use (last updated 30 September 2026) license the prompt
+  text and code, and say the sites you build are yours, but do not mention
+  images or fonts. Their licence is unresolved.
+- **Display font:** the prompt's Ogg Text Medium is a commercial typeface and
+  no licence came with it, so the headings use the project's system fallback,
+  `Georgia, serif`. No font file is shipped.
+- `index.html` keeps a short base reset copied from the claude.ai version, so
+  the opening composition matches it. On phones the sight cards start below
+  the two-row header.
+- The travel facts were written without checked sources. Verify them before
+  relying on them.
+
 ## Project structure
 
 ```
