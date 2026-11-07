@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mostar city</title>
+  <meta name="description" content="A cinematic three-screen scroll story for Mostar city." />
+  <link rel="icon" href="data:," />
+  <!--
+    Base reset copied from the published version (claude.ai/artifact/KEQVDoWLBW7QCYRM9SrNJy)
+    so this page renders exactly like it. The img max-width rule keeps the opening
+    layers at screen width, and the body font sets the small UI text.
+    Delete this <style> block to get the wider original composition from the brief
+    (towers at 118vw, Inter/system-ui body text).
+  -->
+  <style>
+    :root { color-scheme: light; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+    html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+    body { margin: 0; padding: 0; font: 14px -apple-system, BlinkMacSystemFont, sans-serif; background: #fff; color: #000; }
+    img { max-width: 100%; }
+    [hidden]:not([hidden=until-found i]) { display: none !important; }
+  </style>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="site.css" />
+  <script src="script.js" defer></script>
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <main class="site-shell">
+    <section class="cinema-scroll" id="cinema" aria-label="Mostar cinematic scroll story">
+      <div class="stage">
+        <div class="world">
+          <img class="scene-img sky-img" src="assets/sky.webp" alt="" />
+
+          <header class="site-header" aria-label="Primary navigation">
+            <a class="site-logo" href="#cinema">Bosnia and Herzegovina</a>
+            <nav class="site-nav" aria-label="Main menu">
+              <a href="#cinema">Intro</a>
+              <a href="bridge.html">Bridge</a>
+              <a href="bazaar.html">Bazaar</a>
+              <a href="routes.html">Routes</a>
+            </nav>
+            <button class="language-switcher" type="button" aria-label="Change language" aria-expanded="false" aria-controls="lang-menu">
+              <span>EN</span>
+              <span aria-hidden="true">⌄</span>
+            </button>
+            <div class="lang-menu" id="lang-menu" hidden>
+              <p class="lang-current"><span>English</span><span aria-hidden="true">✓</span></p>
+              <p class="lang-note">This guide is only available in English for now.</p>
+            </div>
+          </header>
+
+          <div class="back-stack">
+            <img class="scene-img back-img back-four" src="assets/mountains.webp" alt="" />
+
+            <section class="sights-slider" aria-label="Mostar sights slider">
+              <div class="sights-track">
+                <article class="sight-card" tabindex="0" role="button" aria-label="Open Stari Most card" data-href="bridge.html">
+                  <span class="sight-kicker">Old Bridge</span>
+                  <img class="sight-pin" src="assets/pin-star.webp" alt="" />
+                  <h3>Stari Most</h3>
+                  <p>The stone arch over the Neretva and Mostar's main landmark.</p>
+                </article>
+                <article class="sight-card" tabindex="0" role="button" aria-label="Open Kujundziluk card" data-href="bazaar.html#kujundziluk">
+                  <span class="sight-kicker">Bazaar Street</span>
+                  <img class="sight-pin" src="assets/pin-vessel.webp" alt="" />
+                  <h3>Kujundziluk</h3>
+                  <p>Copper shops, souvenirs, and the old bazaar lane by the bridge.</p>
+                </article>
+                <article class="sight-card" tabindex="0" role="button" aria-label="Open Koski Mehmed Pasha Mosque card" data-href="bazaar.html#koski">
+                  <span class="sight-kicker">Viewpoint</span>
+                  <img class="sight-pin" src="assets/pin-walker.webp" alt="" />
+                  <h3>Koski Mehmed Pasha Mosque</h3>
+                  <p>A classic minaret view back toward Stari Most and the river.</p>
+                </article>
+                <article class="sight-card" tabindex="0" role="button" aria-label="Open Kajtaz House card" data-href="bazaar.html#kajtaz">
+                  <span class="sight-kicker">Ottoman House</span>
+                  <img class="sight-pin" src="assets/pin-star.webp" alt="" />
+                  <h3>Kajtaz House</h3>
+                  <p>A preserved residential house showing Mostar's Ottoman layers.</p>
+                </article>
+                <article class="sight-card" tabindex="0" role="button" aria-label="Open War Photo Exhibition card" data-href="bazaar.html#war-photo">
+                  <span class="sight-kicker">Museum</span>
+                  <img class="sight-pin" src="assets/pin-vessel.webp" alt="" />
+                  <h3>War Photo Exhibition</h3>
+                  <p>A compact, moving stop for context on the city's recent history.</p>
+                </article>
+              </div>
+            </section>
+
+            <img class="scene-img back-img back-bazaar" src="assets/old-town.webp" alt="" />
+          </div>
+
+          <div class="sights-controls" aria-label="Slider controls">
+            <button class="sight-nav sight-prev" type="button" aria-label="Previous sight">←</button>
+            <button class="sight-nav sight-next" type="button" aria-label="Next sight">→</button>
+          </div>
+
+          <h1 class="hero-title">MOSTAR</h1>
+
+          <img class="scene-img splitframe-img splitframe-left" src="assets/tower-left.webp" alt="" />
+          <img class="scene-img splitframe-img splitframe-right" src="assets/tower-right.webp" alt="" />
+          <img class="scene-img bridge-img" src="assets/bridge.webp" alt="" />
+          <img class="scene-img frame-two-img" src="assets/river-rocks.webp" alt="" />
+
+          <div class="shade"></div>
+        </div>
+
+        <section class="intro-copy" aria-label="Mostar overview">
+          <p>A stone arch, emerald water, and a compact old city made for slow mornings, late light, and one unforgettable crossing.</p>
+          <div class="hero-tags" aria-label="Mostar highlights">
+            <span>Old Bridge</span>
+            <span>Neretva River</span>
+            <span>UNESCO old city</span>
+          </div>
+        </section>
+
+        <section class="story-panel story-panel-bridge" aria-label="Old Bridge details">
+          <h2>The bridge is the city's compass.</h2>
+          <p>Stari Most links the banks of the Neretva and anchors a historic quarter shaped by Ottoman, Mediterranean, and European layers.</p>
+          <dl class="facts">
+            <div>
+              <dt>1566</dt>
+              <dd>Original bridge completed</dd>
+            </div>
+            <div>
+              <dt>2005</dt>
+              <dd>Old Bridge Area inscribed by UNESCO</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="story-panel story-panel-bazaar" aria-label="Old town details">
+          <h2>The bazaar keeps Mostar close.</h2>
+          <p>Stone lanes, mosque courtyards, copper stalls, and riverside coffee stay within a short walk of Stari Most.</p>
+          <a class="note-button" href="bazaar.html#notes">
+            <span aria-hidden="true">↗</span>
+            <span>Open old town notes</span>
+          </a>
+        </section>
+      </div>
+    </section>
+
+    <section class="home-next" aria-labelledby="home-next-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 class="section-title" id="home-next-title">Three ways into the city.</h2>
+          <p>Start at the bridge, lose an afternoon in the bazaar, then follow the river out of town.</p>
+        </div>
+        <ul class="paths">
+          <li>
+            <a class="path-row" href="bridge.html">
+              <span class="path-media"><img class="pm-bridge" src="assets/bridge.webp" alt="" /></span>
+              <span class="path-text">
+                <span class="path-kicker">The Old Bridge</span>
+                <span class="path-title">Stari Most</span>
+                <span class="path-line">Built in 1566, brought down in 1993, rebuilt stone by stone. The history, the divers and the best views.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="path-row" href="bazaar.html">
+              <span class="path-media"><img src="assets/old-town.webp" alt="" /></span>
+              <span class="path-text">
+                <span class="path-kicker">The old town</span>
+                <span class="path-title">The bazaar</span>
+                <span class="path-line">Copper lanes, mosque courtyards and Ottoman houses on both banks, plus what to eat and drink.</span>
+              </span>
+            </a>
+          </li>
+          <li>
+            <a class="path-row" href="routes.html">
+              <span class="path-media"><img src="assets/mountains.webp" alt="" /></span>
+              <span class="path-text">
+                <span class="path-kicker">Walks and day trips</span>
+                <span class="path-title">Routes</span>
+                <span class="path-line">An old town walk, the Neretva valley, the train to Sarajevo and everything to know before you go.</span>
+              </span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-grid">
+        <p class="footer-title">Mostar, on the Neretva.</p>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="index.html">Intro</a>
+          <a href="bridge.html">Bridge</a>
+          <a href="bazaar.html">Bazaar</a>
+          <a href="routes.html">Routes</a>
+        </nav>
+        <p class="footer-note">Opening hours, prices and timetables change. Check them locally before you set out.</p>
+      </div>
+      <div class="footer-base">
+        <p>An independent visitor guide to Mostar.</p>
+        <p>Bosnia and Herzegovina</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
